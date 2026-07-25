@@ -57,7 +57,7 @@ function checkRateLimit(key: string) {
 }
 
 export const adminSignIn = createServerFn({ method: "POST" })
-  .inputValidator((data: { passkey: string }) => {
+  .validator((data: { passkey: string }) => {
     if (!data || typeof data.passkey !== "string" || data.passkey.length < 4 || data.passkey.length > 256) {
       throw new Error("Invalid passkey.");
     }
@@ -89,10 +89,7 @@ export const getAdminStatus = createServerFn({ method: "GET" }).handler(async ()
   return { authenticated: Boolean(session.data.unlocked) };
 });
 
-// Server-only helper for other server functions that need to guard admin work.
-export async function requireAdmin() {
-  const session = await useSession<AdminSession>(sessionConfig());
-  if (!session.data.unlocked) {
-    throw new Error("Unauthorized");
-  }
-}
+// Note: a server-only requireAdmin() helper lives in ./admin.server.ts.
+// Do NOT import server-only modules (`@tanstack/react-start/server`) here —
+// this file is reachable from the client bundle via route imports.
+
