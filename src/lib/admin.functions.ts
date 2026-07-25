@@ -41,6 +41,20 @@ function checkRateLimit(key: string) {
   }
 }
 
+function normalizeSettings(value: unknown): StoreSettings {
+  const source = value && typeof value === "object" ? (value as Partial<StoreSettings>) : {};
+
+  return {
+    freeShippingThresholdEGP: Number(source.freeShippingThresholdEGP) || 2500,
+    defaultShippingFeeEGP: Number(source.defaultShippingFeeEGP) || 50,
+    whatsappNumber: source.whatsappNumber || "",
+    instapayHandle: source.instapayHandle || "",
+    announcementEnabled: Boolean(source.announcementEnabled),
+    announcementTextEn: source.announcementTextEn || "Free shipping on orders over 2,500 EGP!",
+    announcementTextAr: source.announcementTextAr || "شحن مجاني للطلبات فوق 2,500 ج.م!",
+  };
+}
+
 export const adminSignIn = createServerFn({ method: "POST" })
   .validator((data: { passkey: string }) => {
     if (!data || typeof data.passkey !== "string" || data.passkey.length < 4 || data.passkey.length > 256) {
@@ -89,9 +103,7 @@ export const saveAdminStoreSettings = createServerFn({ method: "POST" })
     await requireAdmin();
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { normalizeStoreSettings } = await import("@/services/settingsService");
-
-    const normalized = normalizeStoreSettings(data.settings);
+    const normalized = normalizeSettings(data.settings);
     const { error } = await supabaseAdmin.from("settings").upsert({
       key: "store_settings",
       value: normalized,

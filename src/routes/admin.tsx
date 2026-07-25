@@ -1012,7 +1012,8 @@ function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSe
       toast.success("Settings saved to Supabase!");
     } catch (error) {
       console.error("Failed to save store settings", error);
-      toast.error("Failed to save settings. Please try again.");
+      const message = error instanceof Error ? error.message : "Please try again.";
+      toast.error(`Failed to save settings: ${message}`);
     } finally {
       setSavingSettings(false);
     }
