@@ -81,30 +81,60 @@ export const Route = createFileRoute("/admin")({
 });
 
 /* ─────────────────────────────────────── Auth Gate ─────────────────── */
+import { useServerFn } from "@tanstack/react-start";
+import { adminSignIn, adminSignOut, getAdminStatus } from "@/lib/admin.functions";
+
 function AdminPage() {
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [passkey, setPasskey] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const signIn = useServerFn(adminSignIn);
+  const signOut = useServerFn(adminSignOut);
+  const status = useServerFn(getAdminStatus);
 
   useEffect(() => {
-    if (localStorage.getItem("badzy_admin_auth") === "true") setAuthenticated(true);
-  }, []);
+    // Migrate legacy client-side flag off the browser; it was never a real check.
+    localStorage.removeItem("badzy_admin_auth");
+    status().then((s) => setAuthenticated(s.authenticated)).catch(() => setAuthenticated(false));
+  }, [status]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passkey === "admin123" || passkey === "badzy2026") {
-      localStorage.setItem("badzy_admin_auth", "true");
-      setAuthenticated(true);
-      toast.success("Welcome back, Admin! 🎮");
-    } else {
-      toast.error("Invalid passkey. Hint: admin123");
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await signIn({ data: { passkey } });
+      if (res.ok) {
+        setAuthenticated(true);
+        setPasskey("");
+        toast.success("Welcome back, Admin! 🎮");
+      } else {
+        toast.error("Invalid passkey.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Sign-in failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("badzy_admin_auth");
-    setAuthenticated(false);
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } finally {
+      setAuthenticated(false);
+    }
   };
+
+  if (authenticated === null) {
+    return (
+      <div className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-4 py-16 text-center text-sm text-muted-foreground">
+        Checking session…
+      </div>
+    );
+  }
 
   if (!authenticated) {
     return (
@@ -127,6 +157,7 @@ function AdminPage() {
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
                 placeholder="Enter admin passkey"
+                autoComplete="current-password"
                 className="h-11 w-full rounded-xl border border-border bg-background px-4 pr-11 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 required
               />
@@ -140,9 +171,10 @@ function AdminPage() {
             </div>
             <button
               type="submit"
-              className="h-11 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground transition hover:brightness-110 active:scale-95"
+              disabled={submitting}
+              className="h-11 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground transition hover:brightness-110 active:scale-95 disabled:opacity-60"
             >
-              Sign In →
+              {submitting ? "Signing in…" : "Sign In →"}
             </button>
           </form>
         </div>
@@ -152,6 +184,7 @@ function AdminPage() {
 
   return <AdminDashboard onLogout={handleLogout} />;
 }
+
 
 /* ─────────────────────────────────────── Dashboard ─────────────────── */
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
