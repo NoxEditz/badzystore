@@ -24,7 +24,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   announcementTextAr: "شحن مجاني للطلبات فوق 2,500 ج.م!",
 };
 
-function normalizeStoreSettings(value: unknown): StoreSettings {
+export function normalizeStoreSettings(value: unknown): StoreSettings {
   const source = value && typeof value === "object" ? (value as Partial<StoreSettings>) : {};
 
   return {

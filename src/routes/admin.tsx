@@ -43,7 +43,6 @@ import {
 import {
   fetchStoreSettings,
   getStoreSettings,
-  saveStoreSettings,
   updateStoreSettings,
   type StoreSettings,
 } from "@/services/settingsService";
@@ -84,7 +83,7 @@ export const Route = createFileRoute("/admin")({
 
 /* ─────────────────────────────────────── Auth Gate ─────────────────── */
 import { useServerFn } from "@tanstack/react-start";
-import { adminSignIn, adminSignOut, getAdminStatus } from "@/lib/admin.functions";
+import { adminSignIn, adminSignOut, getAdminStatus, saveAdminStoreSettings } from "@/lib/admin.functions";
 
 function AdminPage() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -982,6 +981,7 @@ function CustomersTab({ orders }: { orders: Order[] }) {
 function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSettings: (s: StoreSettings) => void }) {
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const saveSettings = useServerFn(saveAdminStoreSettings);
 
   useEffect(() => {
     let cancelled = false;
@@ -1007,8 +1007,8 @@ function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSe
     e.preventDefault();
     setSavingSettings(true);
     try {
-      await saveStoreSettings(settings);
-      updateStoreSettings(settings);
+      const res = await saveSettings({ data: { settings } });
+      updateStoreSettings(res.settings);
       toast.success("Settings saved to Supabase!");
     } catch (error) {
       console.error("Failed to save store settings", error);

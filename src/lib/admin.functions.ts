@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createHash, timingSafeEqual } from "node:crypto";
+import type { StoreSettings } from "@/services/settingsService";
 
 // Server-side admin auth. The passkey lives in ADMIN_PASSKEY (server env)
 // and is checked with a timing-safe compare. Success stores an unlocked
@@ -75,3 +76,29 @@ export const getAdminStatus = createServerFn({ method: "GET" }).handler(async ()
   const session = await openAdminSession();
   return { authenticated: Boolean(session.data.unlocked) };
 });
+
+export const saveAdminStoreSettings = createServerFn({ method: "POST" })
+  .validator((data: { settings: StoreSettings }) => {
+    if (!data || !data.settings || typeof data.settings !== "object") {
+      throw new Error("Invalid settings payload.");
+    }
+    return data;
+  })
+  .handler(async ({ data }) => {
+    const { requireAdmin } = await import("./admin.server");
+    await requireAdmin();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { normalizeStoreSettings } = await import("@/services/settingsService");
+
+    const normalized = normalizeStoreSettings(data.settings);
+    const { error } = await supabaseAdmin.from("settings").upsert({
+      key: "store_settings",
+      value: normalized,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) throw error;
+
+    return { ok: true as const, settings: normalized };
+  });
