@@ -1,82 +1,124 @@
-# Badzy Store — launch setup guide
+# Badzy Store — دليل التشغيل بالعربي
 
-Badzy Store is an Egypt-focused gaming-accessories e-commerce site built with **TanStack Start**, **React 19**, **TanStack Router**, **Zustand**, **Tailwind CSS v4**, and **Supabase**.
+هذا المشروع هو متجر إلكتروني لإكسسوارات الجيمينج في مصر. المشروع مبني باستخدام **React 19** و **TanStack Start** و **TanStack Router** و **Tailwind CSS v4** و **Supabase**.
 
-This README is the launch checklist for making the site fully functional, including the required keys, free services, manual accounts, and deployment recommendation.
-
----
-
-## 1. Best free deployment choice
-
-### Recommended: Cloudflare-compatible deployment
-
-This project is configured through `@lovable.dev/vite-tanstack-config` and builds with a **Nitro Cloudflare target by default**. In practice, that makes **Cloudflare Pages / Workers** the most natural free deployment path for the generated app.
-
-- Best fit for the generated build output and SSR/server functions
-- Works well with TanStack Start + Nitro
-- Easier to keep aligned with the project’s current runtime defaults
-
-If you prefer Vercel, it can still work, but you should verify the runtime/output settings carefully after each deploy.
-
-- Cloudflare Pages: <https://pages.cloudflare.com>
-- Cloudflare Workers: <https://workers.cloudflare.com>
-- Build command: `npm run build`
-- Install command: `npm install`
+الهدف من هذا الملف أن يشرح لك المتطلبات وخطوات التشغيل والنشر خطوة بخطوة بطريقة سهلة.
 
 ---
 
-## 2. Required free/mostly-free accounts
+## 1. المتطلبات الأساسية
 
-| Need | Why | Where |
+قبل ما تشغل المشروع، تأكد إن الحاجات دي موجودة عندك:
+
+| المطلوب | ليه محتاجه؟ | ملاحظة بسيطة |
 |---|---|---|
-| GitHub account | Stores the code and connects to your deployment provider | <https://github.com> |
-| Cloudflare account | Free hosting/deployment path that matches the current build target | <https://cloudflare.com> |
-| Supabase project | Database for products, orders, settings, admin data, and storage | <https://supabase.com> |
-| WhatsApp Business number | Customer support and order-confirmation links | WhatsApp Business mobile app |
-| InstaPay handle or Vodafone Cash number | Manual payment receiving details | Your bank/Vodafone Cash app |
-| Domain name | Professional live URL, optional at first | Namecheap, GoDaddy, Cloudflare Registrar, or `.com.eg` registrar |
-| Payment gateway account | Real card/Fawry payments later; not required for COD/manual transfer launch | Paymob, Kashier, Geidea, Fawry/Accept |
-| Courier/shipping account | Delivery once orders start | Bosta, Mylerz, Aramex Egypt, or manual local delivery |
-| Analytics/ads accounts | Optional marketing tracking | Google Analytics, Meta Business, TikTok Ads |
-
-You can launch on a free deployment-provider URL with Supabase free tier, COD, and manual InstaPay/Vodafone Cash before buying a domain or opening a payment-gateway account.
+| Node.js | لتشغيل أوامر المشروع وتثبيت المكتبات | يفضل نسخة حديثة مثل Node 20 أو أحدث |
+| npm | لتثبيت الحزم وتشغيل الأوامر | يأتي غالبًا مع Node.js |
+| Git | لرفع المشروع على GitHub ومتابعة التغييرات | مهم للنشر والتحديثات |
+| حساب GitHub | لحفظ كود المشروع أونلاين | الريبو الحالي يمكن رفعه على GitHub |
+| حساب Supabase | قاعدة البيانات والطلبات والإعدادات | مهم جدًا لتشغيل الطلبات واللوحة |
+| حساب Cloudflare | أفضل اختيار مجاني للنشر | المشروع مبني بطريقة مناسبة لـ Cloudflare/Nitro |
+| رقم WhatsApp Business | لاستقبال رسائل العملاء والطلبات | الرقم يجب يكون بصيغة دولية للروابط |
+| InstaPay أو Vodafone Cash | لاستقبال المدفوعات اليدوية | مناسب كبداية قبل بوابة دفع حقيقية |
 
 ---
 
-## 3. Environment variables
+## 2. تشغيل المشروع على جهازك
 
-Create a local `.env` file and add the same values in your deployment provider’s environment settings.
+### الخطوة 1: تثبيت المكتبات
 
-### Required for Supabase-backed features
-
-```env
-# Supabase Dashboard → Project Settings → API
-VITE_SUPABASE_URL="https://your-project-id.supabase.co"
-
-# Use Supabase's new publishable key if available.
-VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_xxxxxxxxxxxxxxxxx"
-
-# Optional legacy fallback supported by this project.
-# VITE_SUPABASE_ANON_KEY="your-old-anon-key"
-
-# Server-only admin login values. Do NOT prefix these with VITE_.
-ADMIN_PASSKEY="generate-a-long-random-admin-passkey"
-ADMIN_SESSION_SECRET="generate-a-long-random-session-secret"
-
-# Server-only Supabase service role key for admin/server operations.
-SUPABASE_URL="https://your-project-id.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="sb_secret_or_service_role_key"
+```bash
+npm install
 ```
 
-Local development note: if `ADMIN_PASSKEY` is not set and `NODE_ENV` is not `production`, the admin passkey falls back to `6565`. If `ADMIN_SESSION_SECRET` is not set locally, the app uses a development-only secret. These fallbacks are only for quick local testing. Always set strong `ADMIN_PASSKEY` and `ADMIN_SESSION_SECRET` values before deploying publicly.
+**شرح:** هذا الأمر ينزل كل المكتبات التي يحتاجها المشروع من `package.json`.
 
-Generate strong secrets locally:
+### الخطوة 2: تشغيل الموقع محليًا
+
+```bash
+npm run dev
+```
+
+**شرح:** هذا يشغل نسخة تطوير من الموقع على جهازك. بعد التشغيل، افتح الرابط الذي يظهر في التيرمنال، غالبًا يكون مثل:
+
+```text
+http://localhost:5173
+```
+
+### الخطوة 3: تجربة بناء المشروع
+
+```bash
+npm run build
+```
+
+**شرح:** هذا يتأكد أن المشروع يقدر يشتغل كنسخة إنتاج جاهزة للنشر. لو فيه أخطاء مهمة، هتظهر هنا.
+
+### أوامر مفيدة إضافية
+
+```bash
+npm run lint
+npm run format
+npm run preview
+```
+
+**شرح سريع:**
+
+- `npm run lint`: يفحص الكود لاكتشاف مشاكل أو أخطاء تنسيق.
+- `npm run format`: يرتب شكل الملفات باستخدام Prettier.
+- `npm run preview`: يعرض نسخة قريبة من نسخة الإنتاج بعد البناء.
+
+---
+
+## 3. ملف البيئة `.env`
+
+أنشئ ملف اسمه `.env` في جذر المشروع، وضع فيه القيم الخاصة بك.
+
+> مهم: لا ترفع ملف `.env` على GitHub لأنه يحتوي على مفاتيح سرية.
+
+### متغيرات Supabase المطلوبة
+
+```env
+VITE_SUPABASE_URL="https://your-project-id.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_xxxxxxxxxxxxxxxxx"
+
+SUPABASE_URL="https://your-project-id.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+```
+
+**شرح:**
+
+- `VITE_SUPABASE_URL`: رابط مشروع Supabase الذي يستخدمه الموقع.
+- `VITE_SUPABASE_PUBLISHABLE_KEY`: المفتاح العام الآمن للاستخدام في الواجهة.
+- `SUPABASE_URL`: نفس رابط Supabase لكن يستخدم في السيرفر.
+- `SUPABASE_SERVICE_ROLE_KEY`: مفتاح حساس جدًا يستخدم للعمليات الإدارية. لا تضعه داخل أي متغير يبدأ بـ `VITE_`.
+
+لو حساب Supabase عندك يستخدم الاسم القديم للمفتاح، يمكنك استخدام:
+
+```env
+VITE_SUPABASE_ANON_KEY="your-anon-key"
+```
+
+### متغيرات لوحة الإدارة
+
+```env
+ADMIN_PASSKEY="ضع-كلمة-سر-قوية-وطويلة"
+ADMIN_SESSION_SECRET="ضع-سر-جلسات-طويل-وعشوائي"
+```
+
+**شرح:**
+
+- `ADMIN_PASSKEY`: كلمة الدخول للوحة الإدارة.
+- `ADMIN_SESSION_SECRET`: سر يستخدم لحماية جلسة الأدمن.
+
+في التطوير المحلي فقط، لو `ADMIN_PASSKEY` غير موجود، المشروع يستخدم `6565`. لا تعتمد على هذا في النشر الحقيقي.
+
+لتوليد سر قوي، شغل:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### Recommended before real customers visit
+### إعدادات المتجر المهمة
 
 ```env
 VITE_STORE_DOMAIN="https://your-domain.com"
@@ -87,149 +129,231 @@ VITE_FREE_SHIPPING_THRESHOLD="2500"
 VITE_DEFAULT_SHIPPING_FEE="50"
 ```
 
-Important: `VITE_WHATSAPP_NUMBER` must be in international format for `wa.me` links, e.g. `201001234567` without `+`, spaces, or dashes.
+**شرح:**
 
-Default storefront values exist in `src/lib/config.ts`, so these variables are optional for local development but should be set for a real launch:
+- `VITE_STORE_DOMAIN`: رابط الدومين الحقيقي للمتجر.
+- `VITE_WHATSAPP_NUMBER`: رقم واتساب بصيغة دولية بدون `+` أو مسافات، مثال: `201001234567`.
+- `VITE_VODAFONE_CASH_NUMBER`: رقم فودافون كاش الظاهر للعميل.
+- `VITE_INSTAPAY_HANDLE`: عنوان InstaPay الذي يدفع عليه العميل.
+- `VITE_FREE_SHIPPING_THRESHOLD`: أقل مبلغ للحصول على شحن مجاني.
+- `VITE_DEFAULT_SHIPPING_FEE`: تكلفة الشحن الافتراضية.
 
-- `VITE_STORE_DOMAIN` defaults to `badzystore.com`
-- `VITE_WHATSAPP_NUMBER` defaults to `201012345678`
-- `VITE_VODAFONE_CASH_NUMBER` defaults to `01012345678`
-- `VITE_INSTAPAY_HANDLE` defaults to `badzystore@instapay`
-- `VITE_FREE_SHIPPING_THRESHOLD` defaults to `2500`
-- `VITE_DEFAULT_SHIPPING_FEE` defaults to `50`
+لو لم تضع هذه القيم، يوجد قيم افتراضية داخل `src/lib/config.ts`، لكنها ليست مناسبة للإطلاق الحقيقي.
 
-### Optional integrations for later
+### متغيرات اختيارية للمستقبل
 
 ```env
-# Payment gateways — public/client keys only here.
 VITE_PAYMOB_PUBLIC_KEY=""
 VITE_STRIPE_PUBLIC_KEY=""
-
-# Courier/shipping integrations.
 VITE_BOSTA_API_KEY=""
 VITE_MYLERZ_API_KEY=""
-
-# Analytics pixels.
 VITE_GA_MEASUREMENT_ID="G-XXXXXXXXXX"
 VITE_META_PIXEL_ID=""
 VITE_TIKTOK_PIXEL_ID=""
 ```
 
-Never put service-role keys, payment secret keys, or private API tokens in `VITE_*` variables. `VITE_*` values are bundled into browser JavaScript.
+**شرح:** هذه القيم خاصة بالدفع والشحن والتحليلات. اتركها فارغة لو لم تكن مفعلة بعد.
 
 ---
 
-## 4. Supabase setup checklist
+## 4. إعداد Supabase خطوة بخطوة
 
-1. Create a free project at <https://supabase.com>.
-2. Copy the project URL into `VITE_SUPABASE_URL`.
-3. Copy the publishable/anon key into `VITE_SUPABASE_PUBLISHABLE_KEY` or `VITE_SUPABASE_ANON_KEY`.
-4. Run the SQL in `supabase/schema.sql` from the Supabase SQL Editor.
-5. Apply any files in `supabase/migrations/` if they are not already included in the schema.
-6. Enable Row Level Security (RLS) on public tables.
-7. Confirm these minimum policies:
-   - `products`: public read; admin-only insert/update/delete.
-   - `orders`: anonymous/customer insert; admin-only select/update/delete.
-   - `settings`: public read for storefront-safe settings; admin-only write.
-   - storage buckets: public read for product images; admin-only upload/delete.
-8. Add your first products or migrate the existing seeded products.
-9. Test checkout and confirm orders appear in Supabase.
+### الخطوة 1: إنشاء مشروع Supabase
 
-Critical: without Supabase configured correctly, orders and stock cannot be trusted across devices.
+افتح:
+
+```text
+https://supabase.com
+```
+
+واعمل مشروع جديد.
+
+**شرح:** Supabase هو المكان الذي يخزن المنتجات والطلبات والإعدادات.
+
+### الخطوة 2: نسخ مفاتيح API
+
+من لوحة Supabase افتح:
+
+```text
+Project Settings → API
+```
+
+ثم انسخ الرابط والمفاتيح إلى ملف `.env`.
+
+**شرح:** بدون هذه القيم، الموقع لن يستطيع الاتصال بقاعدة البيانات.
+
+### الخطوة 3: تشغيل ملف قاعدة البيانات
+
+افتح SQL Editor داخل Supabase، ثم شغل محتوى الملف:
+
+```text
+supabase/schema.sql
+```
+
+**شرح:** هذا ينشئ الجداول الأساسية مثل المنتجات والطلبات والإعدادات.
+
+### الخطوة 4: تطبيق ملفات migrations إن وجدت
+
+راجع مجلد:
+
+```text
+supabase/migrations/
+```
+
+وشغل أي تعديلات غير موجودة في قاعدة البيانات.
+
+**شرح:** ملفات migrations تضيف تحديثات إضافية على قاعدة البيانات.
+
+### الخطوة 5: تفعيل الحماية RLS
+
+فعل Row Level Security على الجداول المهمة.
+
+**شرح:** RLS يمنع أي شخص من قراءة أو تعديل بيانات لا يملك صلاحية عليها.
+
+### أقل صلاحيات مطلوبة
+
+- `products`: قراءة عامة للمنتجات، وتعديل للأدمن فقط.
+- `orders`: العميل يقدر يعمل طلب، والأدمن فقط يقرأ ويعدل الطلبات.
+- `settings`: قراءة عامة للإعدادات الآمنة، وتعديل للأدمن فقط.
+- Storage: قراءة عامة لصور المنتجات، ورفع/حذف للأدمن فقط.
 
 ---
 
-## 5. Current payment status
+## 5. الدفع الحالي
 
-Safe launch-ready methods:
+طرق الدفع المناسبة للإطلاق الآن:
 
-- **Cash on Delivery (COD)** — default checkout option.
-- **InstaPay / bank transfer** — customer enters transfer reference; payment remains pending verification.
+- **الدفع عند الاستلام:** مناسب كبداية وسهل للعملاء.
+- **InstaPay أو تحويل بنكي:** العميل يكتب رقم العملية، والأدمن يراجع الدفع يدويًا.
+- **Vodafone Cash:** يمكن عرض الرقم للعميل والدفع يتم يدويًا.
 
-Not live yet:
+طرق لا تفعلها إلا بعد تكامل حقيقي:
 
-- **Card payments** — do not enable until Paymob/Stripe/Kashier/Geidea is actually integrated server-side.
-- **Fawry** — do not show real Fawry codes until a real Fawry provider creates references.
+- الدفع بالكارت.
+- Fawry.
+- أي بوابة دفع تحتاج تحقق من السيرفر.
 
-Recommended Egypt payment providers:
-
-- Paymob: <https://paymob.com>
-- Kashier: <https://kashier.io>
-- Geidea: <https://www.geidea.net>
-- Fawry: <https://fawry.com>
+**شرح:** الدفع الحقيقي لازم يتأكد من السيرفر أو من لوحة مزود الدفع، وليس من الواجهة فقط.
 
 ---
 
-## 6. Local development
+## 6. النشر على الإنترنت
+
+أفضل اختيار لهذا المشروع هو Cloudflare لأنه متوافق مع بناء Nitro الموجود في المشروع.
+
+### الخطوة 1: ارفع المشروع على GitHub
+
+```bash
+git add -A
+git commit -m "Update project"
+git push
+```
+
+**شرح:** GitHub يحفظ نسخة المشروع، ومنها منصة النشر تأخذ الكود.
+
+### الخطوة 2: افتح Cloudflare
+
+اذهب إلى:
+
+```text
+https://pages.cloudflare.com
+```
+
+أو:
+
+```text
+https://workers.cloudflare.com
+```
+
+**شرح:** Cloudflare سيبني المشروع ويشغله على الإنترنت.
+
+### الخطوة 3: إعداد أوامر النشر
+
+استخدم هذه القيم:
+
+```text
+Install command: npm install
+Build command: npm run build
+```
+
+**شرح:** أمر التثبيت ينزل المكتبات، وأمر البناء يجهز نسخة الإنتاج.
+
+### الخطوة 4: أضف متغيرات البيئة
+
+ضع نفس قيم `.env` داخل إعدادات Cloudflare Environment Variables.
+
+**شرح:** الموقع على الإنترنت لا يرى ملف `.env` المحلي، لذلك لازم تضيف القيم في لوحة النشر.
+
+### الخطوة 5: اختبر الموقع بعد النشر
+
+تأكد من الآتي:
+
+- الصفحة الرئيسية تفتح.
+- صفحة المتجر والمنتجات تعمل.
+- إنشاء طلب جديد يظهر داخل Supabase.
+- لوحة الإدارة تعمل بكلمة `ADMIN_PASSKEY`.
+- رابط WhatsApp يفتح على الرقم الصحيح.
+
+---
+
+## 7. قائمة مراجعة قبل الإطلاق
+
+- [ ] تم ضبط Supabase URL والمفاتيح.
+- [ ] تم ضبط `ADMIN_PASSKEY` و `ADMIN_SESSION_SECRET` بقيم قوية.
+- [ ] تم تشغيل `supabase/schema.sql`.
+- [ ] تم تفعيل RLS والصلاحيات.
+- [ ] تم وضع رقم WhatsApp الحقيقي.
+- [ ] تم وضع بيانات InstaPay أو Vodafone Cash الحقيقية.
+- [ ] تم تجربة طلب كامل من البداية للنهاية.
+- [ ] تم التأكد أن الطلب يظهر في لوحة الأدمن وSupabase.
+- [ ] تم مراجعة صفحات FAQ والضمان والاسترجاع والتواصل.
+- [ ] تم تعديل `public/robots.txt` و `public/sitemap.xml` للدومين الحقيقي قبل SEO النهائي.
+- [ ] تم استبدال الصور التجريبية بصور المنتجات الحقيقية.
+
+---
+
+## 8. ملاحظات أمان مهمة
+
+- لا تضع `SUPABASE_SERVICE_ROLE_KEY` داخل أي متغير يبدأ بـ `VITE_`.
+- لا ترفع ملف `.env` على GitHub.
+- لا تستخدم كلمة سر سهلة للوحة الإدارة.
+- فعل RLS قبل نشر الموقع للعملاء.
+- لا تعتمد على تحقق الدفع من الواجهة فقط.
+- المفاتيح التي تبدأ بـ `VITE_` تظهر في ملفات المتصفح، لذلك لا تضع فيها أسرار.
+
+---
+
+## 9. ملفات التصميم المهمة
+
+- اللوجو: `public/logo.png` و `public/logo.webp`
+- الأيقونات: `public/favicon.ico` و `public/favicon-32.png` و `public/favicon-192.png`
+- صور المنتجات: داخل `src/assets/products/` أو يمكن نقلها لاحقًا إلى Supabase Storage.
+
+---
+
+## 10. ملخص سريع جدًا
+
+لو عايز تشغل المشروع بسرعة:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, usually <http://localhost:5173>.
-
-Useful commands:
+لو عايز تتأكد أنه جاهز للنشر:
 
 ```bash
 npm run build
-npm run lint
-npm run format
 ```
 
----
+لو عايز تطلقه فعليًا:
 
-## 7. Deployment steps
-
-1. Push the repository to GitHub.
-2. Go to your deployment provider and import the repository.
-3. Keep build command as `npm run build`.
-4. Add every required environment variable from section 3.
-5. Deploy.
-6. After deploy, test:
-   - Homepage loads.
-   - Shop/product pages load products.
-   - Checkout creates an order in Supabase.
-   - Admin login works with `ADMIN_PASSKEY`.
-   - WhatsApp links go to your real number.
-7. Add a custom domain when ready.
+1. جهز Supabase.
+2. ضع متغيرات `.env`.
+3. ارفع المشروع على GitHub.
+4. انشره على Cloudflare.
+5. جرب طلب كامل قبل استقبال عملاء حقيقيين.
 
 ---
 
-## 8. Go-live checklist
-
-- [ ] Supabase URL/key set in your deployment provider.
-- [ ] `ADMIN_PASSKEY` and `ADMIN_SESSION_SECRET` set in your deployment provider.
-- [ ] `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` set if server/admin Supabase operations are enabled.
-- [ ] Supabase schema and RLS policies applied.
-- [ ] Real WhatsApp Business number set.
-- [ ] Real InstaPay/Vodafone Cash receiving details set.
-- [ ] Test order appears in Supabase and admin dashboard.
-- [ ] Product stock changes after checkout.
-- [ ] Admin route is not indexed (`robots` noindex is already set in route metadata).
-- [ ] `public/robots.txt` and `public/sitemap.xml` use the real domain before final SEO launch.
-- [ ] Placeholder product images replaced with real SKU photos.
-- [ ] Return, FAQ, warranty, and contact pages reviewed in Arabic and English.
-- [ ] Legal/business requirements checked for selling in Egypt.
-
----
-
-## 9. Important security notes
-
-- The admin passkey is server-side via `ADMIN_PASSKEY`; never hardcode admin passwords in React files.
-- Use a long random passkey, not `admin123` or any guessable word.
-- Keep Supabase service-role keys out of the frontend and out of Git.
-- Enable RLS before sharing the site publicly.
-- Real payment verification must happen server-side or through the provider dashboard/API.
-
----
-
-## 10. Design assets
-
-- Logo: `public/logo.png` and `public/logo.webp`
-- Favicons: `public/favicon.ico`, `public/favicon-32.png`, `public/favicon-192.png`
-- Product imagery: prefer your own product photos or Supabase Storage-hosted images.
-
----
-
-Built for Egyptian gamers. 🎮
+تم بناء Badzy Store للجيمرز في مصر. 🎮
