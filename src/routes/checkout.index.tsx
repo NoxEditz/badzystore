@@ -122,7 +122,7 @@ function CheckoutPage() {
         email,
         phone,
         referenceId: paymentRef,
-        cardDetails: { number: cardNumber, exp: cardExp, cvc: cardCvc },
+        
       });
 
       if (!payRes.success) {

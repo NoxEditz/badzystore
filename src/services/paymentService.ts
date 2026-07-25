@@ -1,7 +1,10 @@
 /**
- * Payment Provider Abstraction Layer
- * Allows dropping in Paymob, Fawry, Stripe, or local Egyptian payment gateways
- * without modifying checkout UI logic.
+ * Payment Provider Abstraction Layer.
+ *
+ * Only real, integrated payment methods are exposed here. Card (Paymob/Stripe)
+ * and Fawry are intentionally NOT provided until a real gateway integration
+ * is in place — rendering a card form or generating a fake Fawry code from
+ * the browser was misleading and never actually collected money.
  */
 
 export interface PaymentRequest {
@@ -10,11 +13,6 @@ export interface PaymentRequest {
   customerName: string;
   email: string;
   phone: string;
-  cardDetails?: {
-    number: string;
-    exp: string;
-    cvc: string;
-  };
   referenceId?: string;
 }
 
@@ -31,7 +29,7 @@ export interface PaymentProvider {
   processPayment(request: PaymentRequest): Promise<PaymentResponse>;
 }
 
-// 1. Cash on Delivery Adapter
+// 1. Cash on Delivery
 export const CodPaymentProvider: PaymentProvider = {
   id: "cod",
   name: "Cash on Delivery",
@@ -45,7 +43,7 @@ export const CodPaymentProvider: PaymentProvider = {
   },
 };
 
-// 2. Vodafone Cash / Mobile Wallet Adapter
+// 2. Vodafone Cash / InstaPay bank transfer (manual verification)
 export const MobileWalletPaymentProvider: PaymentProvider = {
   id: "vodafone_cash",
   name: "Vodafone Cash / InstaPay",
@@ -66,52 +64,11 @@ export const MobileWalletPaymentProvider: PaymentProvider = {
   },
 };
 
-// 3. Fawry Gateway Adapter (Stub)
-export const FawryPaymentProvider: PaymentProvider = {
-  id: "fawry",
-  name: "Fawry Pay",
-  async processPayment(req) {
-    const fawryCode = Math.floor(900000000 + Math.random() * 100000000).toString();
-    return {
-      success: true,
-      transactionId: fawryCode,
-      status: "pending_verification",
-      message: `Fawry payment code generated: ${fawryCode}. Please pay at any Fawry kiosk.`,
-    };
-  },
-};
-
-// 4. Card Payment Adapter (Paymob / Stripe Integration Gateway Stub)
-export const CardPaymentProvider: PaymentProvider = {
-  id: "card",
-  name: "Credit / Debit Card (Paymob / Stripe)",
-  async processPayment(req) {
-    if (!req.cardDetails || !req.cardDetails.number) {
-      return {
-        success: false,
-        status: "failed",
-        message: "Invalid card details provided.",
-      };
-    }
-    // Simulate Paymob gateway API response
-    return {
-      success: true,
-      transactionId: `PAYMOB-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-      status: "completed",
-      message: "Card payment processed successfully via Paymob gateway.",
-    };
-  },
-};
-
 export function getPaymentProvider(methodId: string): PaymentProvider {
   switch (methodId) {
     case "vodafone_cash":
     case "instapay":
       return MobileWalletPaymentProvider;
-    case "fawry":
-      return FawryPaymentProvider;
-    case "card":
-      return CardPaymentProvider;
     case "cod":
     default:
       return CodPaymentProvider;
