@@ -4,7 +4,8 @@ import { useCart, cartSubtotal } from "@/store/cart";
 import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
-import { CONFIG } from "@/lib/config";
+import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -19,6 +20,20 @@ export const Route = createFileRoute("/cart")({
 function CartPage() {
   const { lang } = useLang();
   const t = DICTIONARY[lang];
+  const [settings, setSettings] = useState(() => getStoreSettings());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStoreSettings()
+      .then((liveSettings) => {
+        if (!cancelled) setSettings(liveSettings);
+      })
+      .catch((error) => console.error("Failed to load store settings", error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const lines = useCart((s) => s.lines);
   const setQty = useCart((s) => s.setQty);
@@ -26,8 +41,8 @@ function CartPage() {
   const clear = useCart((s) => s.clear);
 
   const subtotal = cartSubtotal(lines);
-  const freeThreshold = CONFIG.freeShippingThresholdEGP;
-  const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : CONFIG.defaultShippingFeeEGP;
+  const freeThreshold = settings.freeShippingThresholdEGP;
+  const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : settings.defaultShippingFeeEGP;
   const total = subtotal + shipping;
 
   if (lines.length === 0) {

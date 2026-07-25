@@ -1,15 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CreditCard, Lock, Smartphone, Banknote, ShieldCheck, CheckCircle2, QrCode } from "lucide-react";
 import { useCart, cartSubtotal } from "@/store/cart";
 import { createOrder } from "@/services/orderService";
-import { getStoreSettings } from "@/services/settingsService";
+import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
 import { getPaymentProvider } from "@/services/paymentService";
 import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
 import { toast } from "sonner";
-import { CONFIG } from "@/lib/config";
 
 export const EGYPT_GOVERNORATES = [
   "Alexandria",
@@ -44,7 +43,7 @@ export const Route = createFileRoute("/checkout/")({
   head: () => ({
     meta: [
       { title: "Checkout — Badzy Store Egypt" },
-      { name: "description", content: "Complete your Badzy Store order with Cash on Delivery or Vodafone Cash." },
+      { name: "description", content: "Complete your Badzy Store order with Cash on Delivery or InstaPay." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -54,15 +53,28 @@ export const Route = createFileRoute("/checkout/")({
 function CheckoutPage() {
   const { lang } = useLang();
   const t = DICTIONARY[lang];
-  const settings = getStoreSettings();
+  const [settings, setSettings] = useState(() => getStoreSettings());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStoreSettings()
+      .then((liveSettings) => {
+        if (!cancelled) setSettings(liveSettings);
+      })
+      .catch((error) => console.error("Failed to load store settings", error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const lines = useCart((s) => s.lines);
   const clear = useCart((s) => s.clear);
   const nav = useNavigate();
 
   const subtotal = cartSubtotal(lines);
-  const freeThreshold = CONFIG.freeShippingThresholdEGP;
-  const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : CONFIG.defaultShippingFeeEGP;
+  const freeThreshold = settings.freeShippingThresholdEGP;
+  const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : settings.defaultShippingFeeEGP;
   const total = subtotal + shipping;
 
   const [submitting, setSubmitting] = useState(false);

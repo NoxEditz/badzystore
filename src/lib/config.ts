@@ -5,7 +5,6 @@ export const CONFIG = {
   storeName: "Badzy Store",
   storeDomain: import.meta.env.VITE_STORE_DOMAIN || "badzystore.com",
   whatsappNumber: import.meta.env.VITE_WHATSAPP_NUMBER || "201012345678", // Default Egyptian WhatsApp format
-  vodafoneCashNumber: import.meta.env.VITE_VODAFONE_CASH_NUMBER || "01012345678",
   instapayHandle: import.meta.env.VITE_INSTAPAY_HANDLE || "badzystore@instapay",
 
   // E-commerce thresholds

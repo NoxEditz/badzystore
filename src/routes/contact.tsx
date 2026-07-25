@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MessageCircle, Phone, MapPin, Mail } from "lucide-react";
 import { OrderWhatsAppLink } from "@/components/site/OrderWhatsAppLink";
-import { getStoreSettings } from "@/services/settingsService";
+import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -14,7 +15,20 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
-  const settings = getStoreSettings();
+  const [settings, setSettings] = useState(() => getStoreSettings());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStoreSettings()
+      .then((liveSettings) => {
+        if (!cancelled) setSettings(liveSettings);
+      })
+      .catch((error) => console.error("Failed to load store settings", error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">

@@ -1,10 +1,25 @@
 import { MessageCircle } from "lucide-react";
-import { getStoreSettings } from "@/services/settingsService";
+import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
 import { useLang } from "@/store/lang";
+import { useEffect, useState } from "react";
 
 export function WhatsAppButton({ productName }: { productName?: string }) {
   const { lang } = useLang();
-  const settings = getStoreSettings();
+  const [settings, setSettings] = useState(() => getStoreSettings());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchStoreSettings()
+      .then((liveSettings) => {
+        if (!cancelled) setSettings(liveSettings);
+      })
+      .catch((error) => console.error("Failed to load store settings", error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const rawNumber = settings.whatsappNumber.replace(/[^0-9]/g, "");
 
   const message = productName

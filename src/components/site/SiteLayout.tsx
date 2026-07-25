@@ -2,20 +2,29 @@ import type { ReactNode } from "react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { useEffect, useState } from "react";
-import { getStoreSettings, type StoreSettings } from "@/services/settingsService";
+import { fetchStoreSettings, getStoreSettings, type StoreSettings } from "@/services/settingsService";
 import { useLang } from "@/store/lang";
 import { X } from "lucide-react";
 
 function AnnouncementBanner() {
   const { lang } = useLang();
-  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [settings, setSettings] = useState<StoreSettings>(() => getStoreSettings());
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    setSettings(getStoreSettings());
+    let cancelled = false;
+    fetchStoreSettings()
+      .then((liveSettings) => {
+        if (!cancelled) setSettings(liveSettings);
+      })
+      .catch((error) => console.error("Failed to load store settings", error));
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (!settings?.announcementEnabled || !visible) return null;
+  if (!settings.announcementEnabled || !visible) return null;
 
   return (
     <div className="relative flex items-center justify-center bg-primary px-4 py-2 text-center text-xs font-bold text-primary-foreground sm:text-sm">

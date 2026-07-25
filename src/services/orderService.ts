@@ -1,6 +1,6 @@
 import { getProducts, updateProductStock } from "./productService";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { CONFIG } from "@/lib/config";
+import { fetchStoreSettings } from "@/services/settingsService";
 
 export type OrderStatus = "placed" | "confirmed" | "shipped" | "delivered" | "cancelled";
 export type PaymentStatus = "pending" | "verified" | "paid" | "failed" | "cod";
@@ -23,7 +23,7 @@ export type OrderPayload = {
   street: string;
   landmark?: string;
   items: { id: string; qty: number }[];
-  paymentMethod: "cod" | "vodafone_cash" | "instapay" | "fawry" | "card";
+  paymentMethod: "cod" | "instapay" | "fawry" | "card";
   paymentReference?: string;
 };
 
@@ -97,10 +97,11 @@ export async function createOrder(payload: OrderPayload): Promise<Order> {
   }
 
   // Calculate shipping fee according to free shipping threshold
+  const settings = await fetchStoreSettings();
   const shippingEGP =
-    calculatedSubtotal >= CONFIG.freeShippingThresholdEGP || calculatedSubtotal === 0
+    calculatedSubtotal >= settings.freeShippingThresholdEGP || calculatedSubtotal === 0
       ? 0
-      : CONFIG.defaultShippingFeeEGP;
+      : settings.defaultShippingFeeEGP;
   const totalEGP = calculatedSubtotal + shippingEGP;
 
   // Atomically decrement stock

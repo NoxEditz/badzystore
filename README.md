@@ -19,7 +19,7 @@
 | حساب Supabase | قاعدة البيانات والطلبات والإعدادات | مهم جدًا لتشغيل الطلبات واللوحة |
 | حساب Cloudflare | أفضل اختيار مجاني للنشر | المشروع مبني بطريقة مناسبة لـ Cloudflare/Nitro |
 | رقم WhatsApp Business | لاستقبال رسائل العملاء والطلبات | الرقم يجب يكون بصيغة دولية للروابط |
-| InstaPay أو Vodafone Cash | لاستقبال المدفوعات اليدوية | مناسب كبداية قبل بوابة دفع حقيقية |
+| InstaPay أو تحويل بنكي | لاستقبال المدفوعات اليدوية | مناسب كبداية قبل بوابة دفع حقيقية |
 
 ---
 
@@ -123,7 +123,6 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```env
 VITE_STORE_DOMAIN="https://your-domain.com"
 VITE_WHATSAPP_NUMBER="2010XXXXXXXX"
-VITE_VODAFONE_CASH_NUMBER="010XXXXXXXX"
 VITE_INSTAPAY_HANDLE="yourname@instapay"
 VITE_FREE_SHIPPING_THRESHOLD="2500"
 VITE_DEFAULT_SHIPPING_FEE="50"
@@ -133,7 +132,6 @@ VITE_DEFAULT_SHIPPING_FEE="50"
 
 - `VITE_STORE_DOMAIN`: رابط الدومين الحقيقي للمتجر.
 - `VITE_WHATSAPP_NUMBER`: رقم واتساب بصيغة دولية بدون `+` أو مسافات، مثال: `201001234567`.
-- `VITE_VODAFONE_CASH_NUMBER`: رقم فودافون كاش الظاهر للعميل.
 - `VITE_INSTAPAY_HANDLE`: عنوان InstaPay الذي يدفع عليه العميل.
 - `VITE_FREE_SHIPPING_THRESHOLD`: أقل مبلغ للحصول على شحن مجاني.
 - `VITE_DEFAULT_SHIPPING_FEE`: تكلفة الشحن الافتراضية.
@@ -225,7 +223,6 @@ supabase/migrations/
 
 - **الدفع عند الاستلام:** مناسب كبداية وسهل للعملاء.
 - **InstaPay أو تحويل بنكي:** العميل يكتب رقم العملية، والأدمن يراجع الدفع يدويًا.
-- **Vodafone Cash:** يمكن عرض الرقم للعميل والدفع يتم يدويًا.
 
 طرق لا تفعلها إلا بعد تكامل حقيقي:
 
@@ -303,7 +300,7 @@ Build command: npm run build
 - [ ] تم تشغيل `supabase/schema.sql`.
 - [ ] تم تفعيل RLS والصلاحيات.
 - [ ] تم وضع رقم WhatsApp الحقيقي.
-- [ ] تم وضع بيانات InstaPay أو Vodafone Cash الحقيقية.
+- [ ] تم وضع بيانات InstaPay أو التحويل البنكي الحقيقية.
 - [ ] تم تجربة طلب كامل من البداية للنهاية.
 - [ ] تم التأكد أن الطلب يظهر في لوحة الأدمن وSupabase.
 - [ ] تم مراجعة صفحات FAQ والضمان والاسترجاع والتواصل.

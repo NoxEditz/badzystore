@@ -51,7 +51,7 @@ function ReturnsPage() {
           <ul className="list-disc pl-5 space-y-1">
             <li>Item must be unused, sealed in original packaging with all included accessories.</li>
             <li>If an item arrives damaged or defective, we replace it immediately with zero shipping fees.</li>
-            <li>Refunds for cash orders are issued via Vodafone Cash / InstaPay within 24 hours of receiving the returned item.</li>
+            <li>Refunds for cash orders are issued via InstaPay or bank transfer within 24 hours of receiving the returned item.</li>
           </ul>
         </section>
       </div>

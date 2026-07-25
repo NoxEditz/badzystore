@@ -43,10 +43,10 @@ export const CodPaymentProvider: PaymentProvider = {
   },
 };
 
-// 2. Vodafone Cash / InstaPay bank transfer (manual verification)
+// 2. InstaPay / bank transfer (manual verification)
 export const MobileWalletPaymentProvider: PaymentProvider = {
-  id: "vodafone_cash",
-  name: "Vodafone Cash / InstaPay",
+  id: "instapay",
+  name: "InstaPay / Bank Transfer",
   async processPayment(req) {
     if (!req.referenceId || req.referenceId.trim().length < 3) {
       return {
@@ -66,7 +66,6 @@ export const MobileWalletPaymentProvider: PaymentProvider = {
 
 export function getPaymentProvider(methodId: string): PaymentProvider {
   switch (methodId) {
-    case "vodafone_cash":
     case "instapay":
       return MobileWalletPaymentProvider;
     case "cod":

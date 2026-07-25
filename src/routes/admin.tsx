@@ -41,7 +41,9 @@ import {
   deleteProduct,
 } from "@/services/productService";
 import {
+  fetchStoreSettings,
   getStoreSettings,
+  saveStoreSettings,
   updateStoreSettings,
   type StoreSettings,
 } from "@/services/settingsService";
@@ -196,10 +198,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [o, p] = await Promise.all([getOrders(), getProducts()]);
+    const [o, p, s] = await Promise.all([getOrders(), getProducts(), fetchStoreSettings()]);
     setOrders(o);
     setProducts(p);
-    setSettings(getStoreSettings());
+    setSettings(s);
     setLoading(false);
   }, []);
 
@@ -978,17 +980,54 @@ function CustomersTab({ orders }: { orders: Order[] }) {
 
 /* ─────────────────────────────────────── Settings Tab ──────────────── */
 function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSettings: (s: StoreSettings) => void }) {
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingSettings(true);
+    fetchStoreSettings()
+      .then((liveSettings) => {
+        if (!cancelled) setSettings(liveSettings);
+      })
+      .catch((error) => {
+        console.error("Failed to load store settings", error);
+        toast.error("Could not load live settings. Showing cached defaults.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSettings(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setSettings]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      await saveStoreSettings(settings);
+      updateStoreSettings(settings);
+      toast.success("Settings saved to Supabase!");
+    } catch (error) {
+      console.error("Failed to save store settings", error);
+      toast.error("Failed to save settings. Please try again.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl space-y-6">
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          updateStoreSettings(settings);
-          toast.success("Settings saved!");
-        }}
+        onSubmit={handleSave}
         className="rounded-xl border border-border/60 bg-card p-6 space-y-5"
       >
-        <h3 className="font-display text-lg font-bold">Store Configuration</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-lg font-bold">Store Configuration</h3>
+          {loadingSettings && <span className="text-xs text-muted-foreground">Loading live settings…</span>}
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Free Shipping Threshold (EGP)">
@@ -1009,18 +1048,12 @@ function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSe
               onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
               className="admin-input" />
           </Field>
-          <Field label="Vodafone Cash Number">
-            <input type="text" value={settings.vodafoneCashNumber}
-              onChange={(e) => setSettings({ ...settings, vodafoneCashNumber: e.target.value })}
+          <Field label="InstaPay Handle">
+            <input type="text" value={settings.instapayHandle}
+              onChange={(e) => setSettings({ ...settings, instapayHandle: e.target.value })}
               className="admin-input" />
           </Field>
         </div>
-
-        <Field label="InstaPay Handle">
-          <input type="text" value={settings.instapayHandle}
-            onChange={(e) => setSettings({ ...settings, instapayHandle: e.target.value })}
-            className="admin-input" />
-        </Field>
 
         <div className="border-t border-border/60 pt-5 mt-5">
           <h4 className="font-display text-md font-bold mb-4">Top Announcement Banner</h4>
@@ -1054,8 +1087,8 @@ function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSe
           )}
         </div>
 
-        <button type="submit" className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:brightness-110">
-          <Save className="h-4 w-4" /> Save Settings
+        <button type="submit" disabled={savingSettings} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60">
+          <Save className="h-4 w-4" /> {savingSettings ? "Saving…" : "Save Settings"}
         </button>
       </form>
     </div>
