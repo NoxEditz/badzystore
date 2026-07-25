@@ -1,0 +1,1051 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Package,
+  ShoppingBag,
+  Settings,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Plus,
+  Trash2,
+  Lock,
+  LogOut,
+  RefreshCw,
+  Search,
+  Download,
+  Edit2,
+  Users,
+  BarChart2,
+  Tag,
+  X,
+  Save,
+  Eye,
+  ChevronUp,
+  ChevronDown,
+  Phone,
+  MapPin,
+  DollarSign,
+} from "lucide-react";
+import {
+  getOrders,
+  updateOrderStatus,
+  type Order,
+  type OrderStatus,
+  type PaymentStatus,
+} from "@/services/orderService";
+import {
+  getProducts,
+  updateProductStock,
+  saveProduct,
+  deleteProduct,
+} from "@/services/productService";
+import {
+  getStoreSettings,
+  updateStoreSettings,
+  type StoreSettings,
+} from "@/services/settingsService";
+import { type Product, CATEGORIES, type Category } from "@/data/products";
+import { formatEGP } from "@/lib/currency";
+import { toast } from "sonner";
+
+/* ─────────────────────────────────────── Types ─────────────────────── */
+type AdminTab = "orders" | "products" | "categories" | "analytics" | "customers" | "settings";
+
+type CustomCategory = {
+  id: string;
+  label: string;
+  labelAr: string;
+};
+
+function getCustomCategories(): CustomCategory[] {
+  try {
+    return JSON.parse(localStorage.getItem("badzy-custom-categories") ?? "[]");
+  } catch {
+    return [];
+  }
+}
+function saveCustomCategories(cats: CustomCategory[]) {
+  localStorage.setItem("badzy-custom-categories", JSON.stringify(cats));
+}
+
+/* ─────────────────────────────────────── Route ─────────────────────── */
+export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [
+      { title: "Admin Panel — Badzy Store" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
+  component: AdminPage,
+});
+
+/* ─────────────────────────────────────── Auth Gate ─────────────────── */
+function AdminPage() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [passkey, setPasskey] = useState("");
+  const [showPass, setShowPass] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem("badzy_admin_auth") === "true") setAuthenticated(true);
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passkey === "admin123" || passkey === "badzy2026") {
+      localStorage.setItem("badzy_admin_auth", "true");
+      setAuthenticated(true);
+      toast.success("Welcome back, Admin! 🎮");
+    } else {
+      toast.error("Invalid passkey. Hint: admin123");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("badzy_admin_auth");
+    setAuthenticated(false);
+  };
+
+  if (!authenticated) {
+    return (
+      <div className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-4 py-16">
+        <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-2xl text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-2 ring-primary/20">
+            <Lock className="h-8 w-8" />
+          </div>
+          <h1 className="font-display text-2xl font-bold tracking-tight">Admin Portal</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Enter your passkey to access the Badzy management console.
+          </p>
+          <form onSubmit={handleLogin} className="mt-8 space-y-4 text-left">
+            <div className="relative">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Passkey
+              </label>
+              <input
+                type={showPass ? "text" : "password"}
+                value={passkey}
+                onChange={(e) => setPasskey(e.target.value)}
+                placeholder="Enter admin passkey"
+                className="h-11 w-full rounded-xl border border-border bg-background px-4 pr-11 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass((p) => !p)}
+                className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
+            </div>
+            <button
+              type="submit"
+              className="h-11 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground transition hover:brightness-110 active:scale-95"
+            >
+              Sign In →
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return <AdminDashboard onLogout={handleLogout} />;
+}
+
+/* ─────────────────────────────────────── Dashboard ─────────────────── */
+function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+  const [activeTab, setActiveTab] = useState<AdminTab>("orders");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [settings, setSettings] = useState<StoreSettings>(getStoreSettings());
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const [o, p] = await Promise.all([getOrders(), getProducts()]);
+    setOrders(o);
+    setProducts(p);
+    setSettings(getStoreSettings());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const totalRevenue = orders.reduce((s, o) => s + o.totalEGP, 0);
+  const lowStockCount = products.filter((p) => p.stock < 5).length;
+  const pendingCount = orders.filter(
+    (o) => o.orderStatus === "placed" || o.paymentStatus === "pending"
+  ).length;
+  const deliveredCount = orders.filter((o) => o.orderStatus === "delivered").length;
+
+  const tabs: { id: AdminTab; label: string; icon: React.ReactNode; count?: number }[] = [
+    { id: "orders", label: "Orders", icon: <ShoppingBag className="h-4 w-4" />, count: orders.length },
+    { id: "products", label: "Products", icon: <Package className="h-4 w-4" />, count: products.length },
+    { id: "categories", label: "Categories", icon: <Tag className="h-4 w-4" /> },
+    { id: "analytics", label: "Analytics", icon: <BarChart2 className="h-4 w-4" /> },
+    { id: "customers", label: "Customers", icon: <Users className="h-4 w-4" /> },
+    { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
+  ];
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      {/* Header */}
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-5">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-bold tracking-tight">Badzy Admin</h1>
+              <p className="text-xs text-muted-foreground">Management Console</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadData}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-secondary"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+          <button
+            onClick={onLogout}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 text-xs font-semibold text-destructive transition hover:bg-destructive/20"
+          >
+            <LogOut className="h-3.5 w-3.5" /> Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={<TrendingUp className="h-5 w-5 text-emerald-400" />} label="Total Revenue" value={formatEGP(totalRevenue)} sub={`${orders.length} orders`} color="emerald" />
+        <StatCard icon={<ShoppingBag className="h-5 w-5 text-primary" />} label="Pending Action" value={String(pendingCount)} sub="Needs attention" color="red" />
+        <StatCard icon={<CheckCircle className="h-5 w-5 text-sky-400" />} label="Delivered" value={String(deliveredCount)} sub="Completed orders" color="sky" />
+        <StatCard icon={<AlertTriangle className="h-5 w-5 text-amber-400" />} label="Low Stock" value={String(lowStockCount)} sub="Under 5 units" color="amber" />
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-border pb-0 scrollbar-none">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === tab.id
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+            {tab.count !== undefined && (
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                activeTab === tab.id ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
+              }`}>{tab.count}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "orders" && <OrdersTab orders={orders} onRefresh={loadData} />}
+      {activeTab === "products" && <ProductsTab products={products} onRefresh={loadData} />}
+      {activeTab === "categories" && <CategoriesTab />}
+      {activeTab === "analytics" && <AnalyticsTab orders={orders} products={products} />}
+      {activeTab === "customers" && <CustomersTab orders={orders} />}
+      {activeTab === "settings" && <SettingsTab settings={settings} setSettings={setSettings} />}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Stat Card ─────────────────── */
+function StatCard({ icon, label, value, sub, color }: {
+  icon: React.ReactNode; label: string; value: string; sub: string; color: string;
+}) {
+  return (
+    <div className={`rounded-xl border border-border/60 bg-card p-5 transition hover:border-border`}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        {icon}
+      </div>
+      <p className="mt-3 font-display text-3xl font-bold">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Orders Tab ────────────────── */
+function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => void }) {
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    let list = filter === "all" ? orders : orders.filter((o) => o.orderStatus === filter || o.paymentStatus === filter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((o) =>
+        o.customerName?.toLowerCase().includes(q) ||
+        o.phone?.includes(q) ||
+        o.orderNumber?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [orders, filter, search]);
+
+  const exportCSV = () => {
+    const header = ["Order#", "Customer", "Phone", "City", "Governorate", "Total", "Status", "Payment", "Date"];
+    const rows = filtered.map((o) => [
+      o.orderNumber, o.customerName, o.phone, o.city, o.governorate,
+      o.totalEGP, o.orderStatus, o.paymentStatus, new Date(o.createdAt).toLocaleDateString(),
+    ]);
+    const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "badzy-orders.csv"; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Orders exported as CSV!");
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name / phone..."
+              className="h-9 rounded-lg border border-border bg-background pl-9 pr-3 text-xs outline-none focus:border-primary"
+            />
+          </div>
+          {/* Filter */}
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="h-9 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-primary"
+          >
+            <option value="all">All Orders</option>
+            <option value="placed">Status: Placed</option>
+            <option value="confirmed">Status: Confirmed</option>
+            <option value="shipped">Status: Shipped</option>
+            <option value="delivered">Status: Delivered</option>
+            <option value="cancelled">Status: Cancelled</option>
+            <option value="pending">Payment: Pending</option>
+            <option value="cod">Payment: COD</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{filtered.length} orders</span>
+          <button onClick={exportCSV} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-semibold transition hover:bg-secondary">
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </button>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState message="No orders match the current filter." />
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((o) => (
+            <OrderCard key={o.id} order={o} onRefresh={onRefresh} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const statusColors: Record<string, string> = {
+    placed: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+    confirmed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+    shipped: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+    delivered: "bg-green-500/10 text-green-400 border-green-500/30",
+    cancelled: "bg-destructive/10 text-destructive border-destructive/30",
+  };
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-card overflow-hidden transition hover:border-border">
+      {/* Order header row */}
+      <div
+        className="flex flex-wrap cursor-pointer items-center justify-between gap-3 p-4"
+        onClick={() => setExpanded((p) => !p)}
+      >
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-sm font-bold text-primary">{o.orderNumber}</span>
+              <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${statusColors[o.orderStatus] ?? ""}`}>
+                {o.orderStatus}
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              <strong className="text-foreground">{o.customerName}</strong> · {o.phone} · {o.city}, {o.governorate}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="font-display font-bold text-primary">{formatEGP(o.totalEGP)}</span>
+          <span className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</span>
+          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </div>
+      </div>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div className="border-t border-border/40 p-4 space-y-4">
+          {/* Status controls */}
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={o.orderStatus}
+              onClick={(e) => e.stopPropagation()}
+              onChange={async (e) => {
+                await updateOrderStatus(o.id, e.target.value as OrderStatus);
+                toast.success(`Order ${o.orderNumber} → ${e.target.value}`);
+                onRefresh();
+              }}
+              className="h-8 rounded-lg border border-primary/40 bg-primary/10 px-2 text-xs font-semibold text-primary outline-none"
+            >
+              <option value="placed">Placed</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select
+              value={o.paymentStatus}
+              onClick={(e) => e.stopPropagation()}
+              onChange={async (e) => {
+                await updateOrderStatus(o.id, o.orderStatus, e.target.value as PaymentStatus);
+                toast.success(`Payment → ${e.target.value}`);
+                onRefresh();
+              }}
+              className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-semibold outline-none"
+            >
+              <option value="cod">COD</option>
+              <option value="pending">Pending Verification</option>
+              <option value="verified">Verified</option>
+              <option value="paid">Paid</option>
+              <option value="failed">Failed</option>
+            </select>
+            {o.paymentReference && (
+              <span className="flex h-8 items-center rounded-lg bg-primary/10 px-2 font-mono text-[11px] text-primary">
+                Ref: {o.paymentReference}
+              </span>
+            )}
+          </div>
+
+          {/* Items */}
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {o.items.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-3 rounded-lg border border-border/40 bg-background/60 p-2.5 text-xs">
+                <img src={item.image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover bg-black" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{item.name}</p>
+                  <p className="text-muted-foreground">Qty {item.qty} × {formatEGP(item.priceEGP)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Address */}
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">Address:</span> {o.street}{o.landmark ? `, ${o.landmark}` : ""}, {o.city}, {o.governorate}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Products Tab ──────────────── */
+function ProductsTab({ products, onRefresh }: { products: Product[]; onRefresh: () => void }) {
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return products;
+    const q = search.toLowerCase();
+    return products.filter((p) => p.name.toLowerCase().includes(q) || p.category.includes(q));
+  }, [products, search]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products..."
+            className="h-9 rounded-lg border border-border bg-background pl-9 pr-3 text-xs outline-none focus:border-primary"
+          />
+        </div>
+        <button
+          onClick={() => { setShowAddForm(true); setEditingProduct(null); }}
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add Product
+        </button>
+      </div>
+
+      {(showAddForm || editingProduct) && (
+        <ProductForm
+          product={editingProduct ?? undefined}
+          onSaved={() => { setShowAddForm(false); setEditingProduct(null); onRefresh(); }}
+          onCancel={() => { setShowAddForm(false); setEditingProduct(null); }}
+        />
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((p) => (
+          <div key={p.id} className="flex flex-col justify-between rounded-xl border border-border/60 bg-card p-4 transition hover:border-border">
+            <div className="flex gap-3">
+              <img src={p.image} alt={p.name} className="h-16 w-16 shrink-0 rounded-lg object-cover bg-black" />
+              <div className="min-w-0 flex-1">
+                <h4 className="truncate text-sm font-semibold">{p.name}</h4>
+                {p.nameAr && <p className="truncate text-xs text-muted-foreground">{p.nameAr}</p>}
+                <p className="mt-1 font-display font-bold text-primary text-sm">{formatEGP(p.price)}</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{p.category}</p>
+              </div>
+            </div>
+
+            <div className="mt-3 border-t border-border/40 pt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Stock:</span>
+                <input
+                  type="number"
+                  min={0}
+                  defaultValue={p.stock}
+                  onBlur={async (e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val)) {
+                      await updateProductStock(p.id, val);
+                      toast.success(`Stock updated for ${p.name}`);
+                      onRefresh();
+                    }
+                  }}
+                  className="h-7 w-16 rounded-lg border border-border bg-background px-2 text-center text-xs font-bold outline-none focus:border-primary"
+                />
+                {p.stock === 0 && <span className="rounded bg-destructive/20 px-1.5 py-0.5 text-[10px] font-bold text-destructive">OUT</span>}
+                {p.stock > 0 && p.stock < 5 && <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">LOW</span>}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => { setEditingProduct(p); setShowAddForm(false); }}
+                  className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm(`Delete "${p.name}"?`)) {
+                      await deleteProduct(p.id);
+                      toast.success("Product deleted");
+                      onRefresh();
+                    }
+                  }}
+                  className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Product Form ──────────────── */
+function ProductForm({
+  product,
+  onSaved,
+  onCancel,
+}: {
+  product?: Product;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const allCategories = [...CATEGORIES, ...getCustomCategories()];
+  const [name, setName] = useState(product?.name ?? "");
+  const [nameAr, setNameAr] = useState(product?.nameAr ?? "");
+  const [category, setCategory] = useState<string>(product?.category ?? "mice");
+  const [price, setPrice] = useState(product?.price ?? 1000);
+  const [oldPrice, setOldPrice] = useState(product?.oldPrice ?? 0);
+  const [stock, setStock] = useState(product?.stock ?? 10);
+  const [image, setImage] = useState(product?.image ?? "");
+  const [desc, setDesc] = useState(product?.shortDesc ?? "");
+  const [descAr, setDescAr] = useState(product?.shortDescAr ?? "");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const p: Product = {
+      id: product?.id ?? `prod_${Date.now()}`,
+      slug: product?.slug ?? name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      name,
+      nameAr,
+      category: category as Category,
+      price: Number(price),
+      oldPrice: oldPrice > 0 ? Number(oldPrice) : undefined,
+      rating: product?.rating ?? 5.0,
+      reviews: product?.reviews ?? 0,
+      image: image || "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800",
+      shortDesc: desc || "Gaming accessory",
+      shortDescAr: descAr || undefined,
+      specs: product?.specs ?? [],
+      stock: Number(stock),
+      tags: product?.tags ?? [category],
+      badge: product?.badge,
+    };
+    await saveProduct(p);
+    toast.success(product ? "Product updated!" : "Product added!");
+    onSaved();
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-xl border border-primary/30 bg-card p-5 space-y-4 text-sm"
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-lg font-bold">{product ? "Edit Product" : "New Product"}</h3>
+        <button type="button" onClick={onCancel} className="text-muted-foreground hover:text-foreground">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Name (EN)" required>
+          <input required value={name} onChange={(e) => setName(e.target.value)} className="admin-input" />
+        </Field>
+        <Field label="Name (AR)">
+          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} dir="rtl" className="admin-input" />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Category" required>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="admin-input">
+            {allCategories.map((c) => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Price (EGP)" required>
+          <input type="number" required value={price} onChange={(e) => setPrice(Number(e.target.value))} className="admin-input" />
+        </Field>
+        <Field label="Old Price (EGP)">
+          <input type="number" value={oldPrice} onChange={(e) => setOldPrice(Number(e.target.value))} className="admin-input" placeholder="0 = none" />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Stock">
+          <input type="number" required value={stock} onChange={(e) => setStock(Number(e.target.value))} className="admin-input" />
+        </Field>
+        <Field label="Image URL">
+          <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..." className="admin-input" />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Description (EN)">
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className="admin-input !h-20 resize-none" />
+        </Field>
+        <Field label="Description (AR)">
+          <textarea value={descAr} onChange={(e) => setDescAr(e.target.value)} dir="rtl" className="admin-input !h-20 resize-none" />
+        </Field>
+      </div>
+
+      <div className="flex gap-2">
+        <button type="submit" className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110">
+          <Save className="h-3.5 w-3.5" /> {product ? "Save Changes" : "Add Product"}
+        </button>
+        <button type="button" onClick={onCancel} className="h-9 rounded-lg border border-border px-4 text-xs font-semibold transition hover:bg-secondary">
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ─────────────────────────────────────── Categories Tab ────────────── */
+function CategoriesTab() {
+  const builtIn = CATEGORIES;
+  const [custom, setCustom] = useState<CustomCategory[]>(getCustomCategories());
+  const [label, setLabel] = useState("");
+  const [labelAr, setLabelAr] = useState("");
+
+  const addCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!label.trim()) return;
+    const newCat: CustomCategory = {
+      id: label.toLowerCase().replace(/\s+/g, "-"),
+      label: label.trim(),
+      labelAr: labelAr.trim(),
+    };
+    const updated = [...custom, newCat];
+    saveCustomCategories(updated);
+    setCustom(updated);
+    setLabel(""); setLabelAr("");
+    toast.success(`Category "${label}" added!`);
+  };
+
+  const deleteCustom = (id: string) => {
+    const updated = custom.filter((c) => c.id !== id);
+    saveCustomCategories(updated);
+    setCustom(updated);
+    toast.success("Category removed");
+  };
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h3 className="font-display text-lg font-bold mb-4">Built-in Categories</h3>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {builtIn.map((c) => (
+            <div key={c.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold">{c.label}</p>
+                <p className="text-xs text-muted-foreground">{c.labelAr}</p>
+              </div>
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground uppercase">{c.id}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="font-display text-lg font-bold mb-4">Custom Categories</h3>
+        {custom.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No custom categories yet. Add one below.</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2 mb-4">
+            {custom.map((c) => (
+              <div key={c.id} className="flex items-center justify-between rounded-xl border border-primary/30 bg-card px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold">{c.label}</p>
+                  <p className="text-xs text-muted-foreground">{c.labelAr}</p>
+                </div>
+                <button onClick={() => deleteCustom(c.id)} className="text-muted-foreground hover:text-destructive transition">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={addCategory} className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+          <h4 className="text-sm font-bold">Add New Category</h4>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Label (EN)" required>
+              <input required value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Controllers" className="admin-input" />
+            </Field>
+            <Field label="Label (AR)">
+              <input value={labelAr} onChange={(e) => setLabelAr(e.target.value)} dir="rtl" placeholder="مثال: أذرع تحكم" className="admin-input" />
+            </Field>
+          </div>
+          <button type="submit" className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110">
+            <Plus className="h-3.5 w-3.5" /> Add Category
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Analytics Tab ─────────────── */
+function AnalyticsTab({ orders, products }: { orders: Order[]; products: Product[] }) {
+  const totalRevenue = orders.reduce((s, o) => s + o.totalEGP, 0);
+  const avgOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  // Top 5 products by order frequency
+  const productFrequency: Record<string, { name: string; count: number; revenue: number }> = {};
+  for (const order of orders) {
+    for (const item of order.items) {
+      if (!productFrequency[item.name]) productFrequency[item.name] = { name: item.name, count: 0, revenue: 0 };
+      productFrequency[item.name].count += item.qty;
+      productFrequency[item.name].revenue += item.qty * item.priceEGP;
+    }
+  }
+  const topProducts = Object.values(productFrequency).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  // Order status breakdown
+  const statusBreakdown = [
+    { label: "Placed", count: orders.filter((o) => o.orderStatus === "placed").length, color: "bg-blue-400" },
+    { label: "Confirmed", count: orders.filter((o) => o.orderStatus === "confirmed").length, color: "bg-emerald-400" },
+    { label: "Shipped", count: orders.filter((o) => o.orderStatus === "shipped").length, color: "bg-amber-400" },
+    { label: "Delivered", count: orders.filter((o) => o.orderStatus === "delivered").length, color: "bg-green-400" },
+    { label: "Cancelled", count: orders.filter((o) => o.orderStatus === "cancelled").length, color: "bg-red-400" },
+  ];
+
+  // Payment breakdown
+  const paymentBreakdown = [
+    { label: "COD", count: orders.filter((o) => o.paymentMethod === "cod").length },
+    { label: "Wallet", count: orders.filter((o) => o.paymentMethod === "wallet").length },
+    { label: "Card", count: orders.filter((o) => o.paymentMethod === "card").length },
+    { label: "Fawry", count: orders.filter((o) => o.paymentMethod === "fawry").length },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Row */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avg Order Value</p>
+          <p className="mt-2 font-display text-2xl font-bold">{formatEGP(avgOrderValue)}</p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Orders</p>
+          <p className="mt-2 font-display text-2xl font-bold">{orders.length}</p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Products Listed</p>
+          <p className="mt-2 font-display text-2xl font-bold">{products.length}</p>
+        </div>
+      </div>
+
+      {/* Status breakdown */}
+      <div className="rounded-xl border border-border/60 bg-card p-5">
+        <h3 className="mb-4 font-display text-base font-bold">Order Status Breakdown</h3>
+        <div className="space-y-3">
+          {statusBreakdown.map((s) => {
+            const pct = orders.length > 0 ? (s.count / orders.length) * 100 : 0;
+            return (
+              <div key={s.label} className="flex items-center gap-3 text-sm">
+                <span className="w-20 shrink-0 text-xs text-muted-foreground">{s.label}</span>
+                <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${s.color}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="w-8 text-right text-xs font-bold">{s.count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Payment methods */}
+      <div className="rounded-xl border border-border/60 bg-card p-5">
+        <h3 className="mb-4 font-display text-base font-bold">Payment Methods</h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {paymentBreakdown.map((p) => (
+            <div key={p.label} className="rounded-lg border border-border/40 bg-background/60 p-3 text-center">
+              <p className="font-display text-2xl font-bold">{p.count}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{p.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Top Products */}
+      {topProducts.length > 0 && (
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <h3 className="mb-4 font-display text-base font-bold">Top Products by Sales</h3>
+          <div className="space-y-3">
+            {topProducts.map((p, i) => (
+              <div key={p.name} className="flex items-center gap-3 text-sm">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                  {i + 1}
+                </span>
+                <span className="flex-1 truncate">{p.name}</span>
+                <span className="text-xs text-muted-foreground">{p.count} sold</span>
+                <span className="font-bold text-primary">{formatEGP(p.revenue)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {orders.length === 0 && (
+        <EmptyState message="No order data yet. Orders will appear here once placed." />
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Customers Tab ─────────────── */
+function CustomersTab({ orders }: { orders: Order[] }) {
+  const [search, setSearch] = useState("");
+
+  // Deduplicate by phone
+  const customers = useMemo(() => {
+    const map: Record<string, { name: string; phone: string; city: string; governorate: string; orders: number; spent: number }> = {};
+    for (const o of orders) {
+      if (!map[o.phone]) {
+        map[o.phone] = { name: o.customerName, phone: o.phone, city: o.city, governorate: o.governorate, orders: 0, spent: 0 };
+      }
+      map[o.phone].orders++;
+      map[o.phone].spent += o.totalEGP;
+    }
+    return Object.values(map).sort((a, b) => b.spent - a.spent);
+  }, [orders]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return customers;
+    const q = search.toLowerCase();
+    return customers.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+  }, [customers, search]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search customers..."
+            className="h-9 rounded-lg border border-border bg-background pl-9 pr-3 text-xs outline-none focus:border-primary"
+          />
+        </div>
+        <span className="text-xs text-muted-foreground">{filtered.length} unique customers</span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState message="No customers yet. Orders will populate this list." />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((c) => (
+            <div key={c.phone} className="rounded-xl border border-border/60 bg-card p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-sm">{c.name}</p>
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                    <Phone className="h-3 w-3" /> {c.phone}
+                  </p>
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3" /> {c.city}, {c.governorate}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-display font-bold text-primary text-sm">{formatEGP(c.spent)}</p>
+                  <p className="text-xs text-muted-foreground">{c.orders} order{c.orders !== 1 ? "s" : ""}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Settings Tab ──────────────── */
+function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSettings: (s: StoreSettings) => void }) {
+  return (
+    <div className="max-w-2xl space-y-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          updateStoreSettings(settings);
+          toast.success("Settings saved!");
+        }}
+        className="rounded-xl border border-border/60 bg-card p-6 space-y-5"
+      >
+        <h3 className="font-display text-lg font-bold">Store Configuration</h3>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Free Shipping Threshold (EGP)">
+            <input type="number" value={settings.freeShippingThresholdEGP}
+              onChange={(e) => setSettings({ ...settings, freeShippingThresholdEGP: Number(e.target.value) })}
+              className="admin-input" />
+          </Field>
+          <Field label="Default Shipping Fee (EGP)">
+            <input type="number" value={settings.defaultShippingFeeEGP}
+              onChange={(e) => setSettings({ ...settings, defaultShippingFeeEGP: Number(e.target.value) })}
+              className="admin-input" />
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="WhatsApp Number (+20...)">
+            <input type="text" value={settings.whatsappNumber}
+              onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
+              className="admin-input" />
+          </Field>
+          <Field label="Vodafone Cash Number">
+            <input type="text" value={settings.vodafoneCashNumber}
+              onChange={(e) => setSettings({ ...settings, vodafoneCashNumber: e.target.value })}
+              className="admin-input" />
+          </Field>
+        </div>
+
+        <Field label="InstaPay Handle">
+          <input type="text" value={settings.instapayHandle}
+            onChange={(e) => setSettings({ ...settings, instapayHandle: e.target.value })}
+            className="admin-input" />
+        </Field>
+
+        <div className="border-t border-border/60 pt-5 mt-5">
+          <h4 className="font-display text-md font-bold mb-4">Top Announcement Banner</h4>
+          
+          <label className="flex items-center gap-3 mb-4 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={settings.announcementEnabled}
+              onChange={(e) => setSettings({ ...settings, announcementEnabled: e.target.checked })}
+              className="accent-primary h-4 w-4"
+            />
+            <span className="text-sm font-semibold">Enable Announcement Banner</span>
+          </label>
+
+          {settings.announcementEnabled && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Banner Text (EN)">
+                <input type="text" value={settings.announcementTextEn}
+                  onChange={(e) => setSettings({ ...settings, announcementTextEn: e.target.value })}
+                  placeholder="e.g. Free shipping!"
+                  className="admin-input" />
+              </Field>
+              <Field label="Banner Text (AR)">
+                <input type="text" value={settings.announcementTextAr}
+                  onChange={(e) => setSettings({ ...settings, announcementTextAr: e.target.value })}
+                  dir="rtl"
+                  placeholder="مثال: شحن مجاني!"
+                  className="admin-input" />
+              </Field>
+            </div>
+          )}
+        </div>
+
+        <button type="submit" className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:brightness-110">
+          <Save className="h-4 w-4" /> Save Settings
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────── Helpers ───────────────────── */
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}{required && <span className="text-primary ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border border-border/60 bg-card py-16 text-center">
+      <Package className="h-10 w-10 text-muted-foreground/30 mb-3" />
+      <p className="text-sm text-muted-foreground">{message}</p>
+    </div>
+  );
+}
