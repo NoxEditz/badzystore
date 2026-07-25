@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
 import { createHash, timingSafeEqual } from "node:crypto";
 
 // Server-side admin auth. The passkey lives in ADMIN_PASSKEY (server env)
@@ -7,26 +6,11 @@ import { createHash, timingSafeEqual } from "node:crypto";
 // flag in an encrypted, httpOnly session cookie signed with
 // ADMIN_SESSION_SECRET. The client never sees the passkey or the raw
 // session value.
-
-type AdminSession = { unlocked?: boolean; since?: number };
-
-function sessionConfig() {
-  const password = process.env.ADMIN_SESSION_SECRET;
-  if (!password || password.length < 32) {
-    throw new Error("ADMIN_SESSION_SECRET is not configured (min 32 chars).");
-  }
-  return {
-    password,
-    name: "badzy-admin",
-    maxAge: 60 * 60 * 8, // 8 hours
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax" as const,
-      path: "/",
-    },
-  };
-}
+//
+// NOTE: this file is imported by src/routes/admin.tsx, so it's reachable
+// from the client bundle. Server-only APIs (`@tanstack/react-start/server`,
+// service-role clients, etc.) must be dynamic-imported inside handler
+// bodies — those bodies are stripped from the client bundle by TanStack.
 
 // Hash both sides to equal-length digests before comparing — timingSafeEqual
 // throws on a length mismatch, and the raw length would leak through timing.
@@ -73,23 +57,21 @@ export const adminSignIn = createServerFn({ method: "POST" })
       return { ok: false as const };
     }
 
-    const session = await useSession<AdminSession>(sessionConfig());
+    const { openAdminSession } = await import("./admin.server");
+    const session = await openAdminSession();
     await session.update({ unlocked: true, since: Date.now() });
     return { ok: true as const };
   });
 
 export const adminSignOut = createServerFn({ method: "POST" }).handler(async () => {
-  const session = await useSession<AdminSession>(sessionConfig());
+  const { openAdminSession } = await import("./admin.server");
+  const session = await openAdminSession();
   await session.clear();
   return { ok: true as const };
 });
 
 export const getAdminStatus = createServerFn({ method: "GET" }).handler(async () => {
-  const session = await useSession<AdminSession>(sessionConfig());
+  const { openAdminSession } = await import("./admin.server");
+  const session = await openAdminSession();
   return { authenticated: Boolean(session.data.unlocked) };
 });
-
-// Note: a server-only requireAdmin() helper lives in ./admin.server.ts.
-// Do NOT import server-only modules (`@tanstack/react-start/server`) here —
-// this file is reachable from the client bundle via route imports.
-

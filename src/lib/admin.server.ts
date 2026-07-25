@@ -1,6 +1,6 @@
 import { useSession } from "@tanstack/react-start/server";
 
-type AdminSession = { unlocked?: boolean; since?: number };
+export type AdminSession = { unlocked?: boolean; since?: number };
 
 function sessionConfig() {
   const password = process.env.ADMIN_SESSION_SECRET;
@@ -10,7 +10,7 @@ function sessionConfig() {
   return {
     password,
     name: "badzy-admin",
-    maxAge: 60 * 60 * 8,
+    maxAge: 60 * 60 * 8, // 8 hours
     cookie: {
       httpOnly: true,
       secure: true,
@@ -20,10 +20,14 @@ function sessionConfig() {
   };
 }
 
+export async function openAdminSession() {
+  return useSession<AdminSession>(sessionConfig());
+}
+
 // Server-only helper for other server functions that need to guard admin work.
-// The `.server.ts` extension keeps this out of the client bundle.
+// The `.server.ts` extension keeps this file out of the client bundle entirely.
 export async function requireAdmin() {
-  const session = await useSession<AdminSession>(sessionConfig());
+  const session = await openAdminSession();
   if (!session.data.unlocked) {
     throw new Error("Unauthorized");
   }
