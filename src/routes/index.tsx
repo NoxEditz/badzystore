@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
         content: "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
       },
     ],
-    links: [{ rel: "preload", as: "image", href: heroImg, fetchpriority: "high" } as never],
+    links: [{ rel: "preload", as: "image", href: heroImg, fetchPriority: "high" } as never],
   }),
   component: Home,
 });

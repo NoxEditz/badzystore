@@ -3,7 +3,10 @@ import { useSession } from "@tanstack/react-start/server";
 export type AdminSession = { unlocked?: boolean; since?: number };
 
 function sessionConfig() {
-  const password = process.env.ADMIN_SESSION_SECRET;
+  const isProduction = process.env.NODE_ENV === "production";
+  const password =
+    process.env.ADMIN_SESSION_SECRET ||
+    (!isProduction ? "badzy-local-admin-session-secret-6565-dev-only" : "");
   if (!password || password.length < 32) {
     throw new Error("ADMIN_SESSION_SECRET is not configured (min 32 chars).");
   }
@@ -13,7 +16,7 @@ function sessionConfig() {
     maxAge: 60 * 60 * 8, // 8 hours
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       sameSite: "lax" as const,
       path: "/",
     },

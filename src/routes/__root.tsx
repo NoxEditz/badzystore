@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteLayout } from "../components/site/SiteLayout";
 import { Toaster } from "sonner";
 import { WhatsAppButton } from "../components/site/WhatsAppButton";
+import { RouteLoadingScreen } from "../components/site/RouteLoadingScreen";
 import { useLang } from "../store/lang";
 import { useTheme } from "../store/theme";
 import { initAnalytics } from "../lib/analytics";
@@ -195,6 +196,7 @@ function RootComponent() {
       <SiteLayout>
         <Outlet />
       </SiteLayout>
+      <RouteLoadingScreen />
       <WhatsAppButton />
       <Toaster theme={theme} position="top-center" richColors />
       <svg width="0" height="0" className="absolute pointer-events-none">
