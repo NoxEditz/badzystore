@@ -1729,6 +1729,161 @@ function SettingsTab({
               />
             </Field>
           </div>
+
+          <div className="rounded-2xl border border-border/60 bg-background/50 p-4 space-y-4">
+            <div>
+              <h3 className="font-display text-lg font-bold">Homepage Sections</h3>
+              <p className="text-xs text-muted-foreground">
+                Edit the public homepage section labels/titles without changing code.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                ["Categories eyebrow EN", "categoriesEyebrowEn"],
+                ["Categories eyebrow AR", "categoriesEyebrowAr"],
+                ["Categories title EN", "categoriesTitleEn"],
+                ["Categories title AR", "categoriesTitleAr"],
+                ["Featured eyebrow EN", "featuredEyebrowEn"],
+                ["Featured eyebrow AR", "featuredEyebrowAr"],
+                ["Featured title EN", "featuredTitleEn"],
+                ["Featured title AR", "featuredTitleAr"],
+                ["Trending eyebrow EN", "trendingEyebrowEn"],
+                ["Trending eyebrow AR", "trendingEyebrowAr"],
+                ["Trending title EN", "trendingTitleEn"],
+                ["Trending title AR", "trendingTitleAr"],
+              ].map(([label, key]) => (
+                <Field key={key} label={label}>
+                  <input
+                    type="text"
+                    value={String(settings[key as keyof typeof settings] || "")}
+                    onChange={(e) => setSettings({ ...settings, [key]: e.target.value })}
+                    dir={String(label).includes(" AR") ? "rtl" : undefined}
+                    className="admin-input"
+                  />
+                </Field>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-background/50 p-4 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display text-lg font-bold">Trust Cards</h3>
+                <p className="text-xs text-muted-foreground">
+                  Add, hide, or rewrite the four homepage trust cards.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:border-primary hover:text-primary"
+                onClick={() =>
+                  setSettings({
+                    ...settings,
+                    trustCards: [
+                      ...settings.trustCards,
+                      {
+                        id: `trust-${Date.now()}`,
+                        titleEn: "New benefit",
+                        titleAr: "ميزة جديدة",
+                        subtitleEn: "Short subtitle",
+                        subtitleAr: "وصف قصير",
+                        enabled: true,
+                      },
+                    ],
+                  })
+                }
+              >
+                + Add trust card
+              </button>
+            </div>
+            <div className="space-y-3">
+              {settings.trustCards.map((card) => (
+                <div key={card.id} className="grid gap-3 rounded-xl border border-border/50 bg-card/50 p-3 sm:grid-cols-[auto_1fr_1fr_1fr_1fr_auto]">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={card.enabled}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          trustCards: settings.trustCards.map((x) =>
+                            x.id === card.id ? { ...x, enabled: e.target.checked } : x,
+                          ),
+                        })
+                      }
+                    />
+                    Show
+                  </label>
+                  <input
+                    value={card.titleEn}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        trustCards: settings.trustCards.map((x) =>
+                          x.id === card.id ? { ...x, titleEn: e.target.value } : x,
+                        ),
+                      })
+                    }
+                    placeholder="Title EN"
+                    className="admin-input"
+                  />
+                  <input
+                    value={card.titleAr}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        trustCards: settings.trustCards.map((x) =>
+                          x.id === card.id ? { ...x, titleAr: e.target.value } : x,
+                        ),
+                      })
+                    }
+                    placeholder="Title AR"
+                    dir="rtl"
+                    className="admin-input"
+                  />
+                  <input
+                    value={card.subtitleEn}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        trustCards: settings.trustCards.map((x) =>
+                          x.id === card.id ? { ...x, subtitleEn: e.target.value } : x,
+                        ),
+                      })
+                    }
+                    placeholder="Subtitle EN"
+                    className="admin-input"
+                  />
+                  <input
+                    value={card.subtitleAr}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        trustCards: settings.trustCards.map((x) =>
+                          x.id === card.id ? { ...x, subtitleAr: e.target.value } : x,
+                        ),
+                      })
+                    }
+                    placeholder="Subtitle AR"
+                    dir="rtl"
+                    className="admin-input"
+                  />
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-destructive hover:underline"
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        trustCards: settings.trustCards.filter((x) => x.id !== card.id),
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <button

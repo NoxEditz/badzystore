@@ -17,6 +17,19 @@ export type StoreSettings = {
   heroTitleAr: string;
   heroSubtitleEn: string;
   heroSubtitleAr: string;
+  categoriesEyebrowEn: string;
+  categoriesEyebrowAr: string;
+  categoriesTitleEn: string;
+  categoriesTitleAr: string;
+  featuredEyebrowEn: string;
+  featuredEyebrowAr: string;
+  featuredTitleEn: string;
+  featuredTitleAr: string;
+  trendingEyebrowEn: string;
+  trendingEyebrowAr: string;
+  trendingTitleEn: string;
+  trendingTitleAr: string;
+  trustCards: TrustCard[];
   customCategories: StoreCategory[];
 };
 
@@ -24,6 +37,15 @@ export type AnnouncementItem = {
   id: string;
   textEn: string;
   textAr: string;
+  enabled: boolean;
+};
+
+export type TrustCard = {
+  id: string;
+  titleEn: string;
+  titleAr: string;
+  subtitleEn: string;
+  subtitleAr: string;
   enabled: boolean;
 };
 
@@ -83,6 +105,52 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   heroSubtitleEn:
     "Performance gaming gear, fast delivery, and secure checkout for players across Egypt.",
   heroSubtitleAr: "معدات جيمينج احترافية، توصيل سريع، ودفع آمن للاعبين في كل مصر.",
+  categoriesEyebrowEn: "Shop by category",
+  categoriesEyebrowAr: "تسوق حسب القسم",
+  categoriesTitleEn: "Pick your weapon.",
+  categoriesTitleAr: "اختر سلاحك في الجيم.",
+  featuredEyebrowEn: "Featured",
+  featuredEyebrowAr: "مميز",
+  featuredTitleEn: "Fresh from the workbench.",
+  featuredTitleAr: "أحدث المنتجات بالمخزن.",
+  trendingEyebrowEn: "Trending",
+  trendingEyebrowAr: "الأكثر طلباً",
+  trendingTitleEn: "What players are grabbing.",
+  trendingTitleAr: "المنتجات الأكثر مبيعاً في مصر.",
+  trustCards: [
+    {
+      id: "secure-checkout",
+      titleEn: "Secure checkout",
+      titleAr: "دفع آمن",
+      subtitleEn: "256-bit encrypted",
+      subtitleAr: "مشفر بالكامل",
+      enabled: true,
+    },
+    {
+      id: "egypt-delivery",
+      titleEn: "Egypt delivery",
+      titleAr: "توصيل في مصر",
+      subtitleEn: "All governorates",
+      subtitleAr: "كل محافظات مصر",
+      enabled: true,
+    },
+    {
+      id: "easy-returns",
+      titleEn: "Easy returns",
+      titleAr: "استرجاع سهل",
+      subtitleEn: "Hassle-free",
+      subtitleAr: "سهل وسريع",
+      enabled: true,
+    },
+    {
+      id: "warranty",
+      titleEn: "Warranty",
+      titleAr: "ضمان",
+      subtitleEn: "On all products",
+      subtitleAr: "ضمان أصلي",
+      enabled: true,
+    },
+  ],
   customCategories: [],
 };
 
@@ -133,6 +201,33 @@ export function normalizeAnnouncementItems(value: unknown): AnnouncementItem[] {
     });
 }
 
+export function normalizeTrustCards(value: unknown): TrustCard[] {
+  const sourceItems = Array.isArray(value) ? value : DEFAULT_STORE_SETTINGS.trustCards;
+  const seen = new Set<string>();
+  return sourceItems
+    .map((item, index) => {
+      const source = item && typeof item === "object" ? (item as Partial<TrustCard>) : {};
+      const titleEn = String(source.titleEn || "").trim();
+      const titleAr = String(source.titleAr || titleEn).trim();
+      const id = String(source.id || titleEn.toLowerCase().replace(/[^a-z0-9]+/g, "-") || `trust-${index + 1}`)
+        .trim()
+        .toLowerCase();
+      return {
+        id,
+        titleEn,
+        titleAr,
+        subtitleEn: String(source.subtitleEn || "").trim(),
+        subtitleAr: String(source.subtitleAr || source.subtitleEn || "").trim(),
+        enabled: source.enabled !== false,
+      };
+    })
+    .filter((item) => {
+      if (!item.id || (!item.titleEn && !item.titleAr) || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+}
+
 export function normalizeStoreSettings(value: unknown): StoreSettings {
   const source = value && typeof value === "object" ? (value as Partial<StoreSettings>) : {};
 
@@ -154,6 +249,19 @@ export function normalizeStoreSettings(value: unknown): StoreSettings {
     heroTitleAr: source.heroTitleAr || DEFAULT_STORE_SETTINGS.heroTitleAr,
     heroSubtitleEn: source.heroSubtitleEn || DEFAULT_STORE_SETTINGS.heroSubtitleEn,
     heroSubtitleAr: source.heroSubtitleAr || DEFAULT_STORE_SETTINGS.heroSubtitleAr,
+    categoriesEyebrowEn: source.categoriesEyebrowEn || DEFAULT_STORE_SETTINGS.categoriesEyebrowEn,
+    categoriesEyebrowAr: source.categoriesEyebrowAr || DEFAULT_STORE_SETTINGS.categoriesEyebrowAr,
+    categoriesTitleEn: source.categoriesTitleEn || DEFAULT_STORE_SETTINGS.categoriesTitleEn,
+    categoriesTitleAr: source.categoriesTitleAr || DEFAULT_STORE_SETTINGS.categoriesTitleAr,
+    featuredEyebrowEn: source.featuredEyebrowEn || DEFAULT_STORE_SETTINGS.featuredEyebrowEn,
+    featuredEyebrowAr: source.featuredEyebrowAr || DEFAULT_STORE_SETTINGS.featuredEyebrowAr,
+    featuredTitleEn: source.featuredTitleEn || DEFAULT_STORE_SETTINGS.featuredTitleEn,
+    featuredTitleAr: source.featuredTitleAr || DEFAULT_STORE_SETTINGS.featuredTitleAr,
+    trendingEyebrowEn: source.trendingEyebrowEn || DEFAULT_STORE_SETTINGS.trendingEyebrowEn,
+    trendingEyebrowAr: source.trendingEyebrowAr || DEFAULT_STORE_SETTINGS.trendingEyebrowAr,
+    trendingTitleEn: source.trendingTitleEn || DEFAULT_STORE_SETTINGS.trendingTitleEn,
+    trendingTitleAr: source.trendingTitleAr || DEFAULT_STORE_SETTINGS.trendingTitleAr,
+    trustCards: normalizeTrustCards(source.trustCards),
     customCategories: normalizeStoreCategories(source.customCategories),
   };
 }

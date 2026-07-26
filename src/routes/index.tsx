@@ -74,6 +74,7 @@ function Home() {
   const visibleMarqueeItems = marqueeItems.length
     ? marqueeItems.map((item) => (lang === "ar" ? item.textAr || item.textEn : item.textEn || item.textAr))
     : fallbackMarqueeItems;
+  const trustIcons = [ShieldCheck, Truck, Package, Star];
 
   return (
     <>
@@ -208,10 +209,10 @@ function Home() {
         <Reveal className="mb-8 flex items-end justify-between gap-4">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              {lang === "ar" ? "تسوق حسب القسم" : "Shop by category"}
+              {lang === "ar" ? settings.categoriesEyebrowAr : settings.categoriesEyebrowEn}
             </p>
             <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              {lang === "ar" ? "اختر سلاحك في الجيم." : "Pick your weapon."}
+              {lang === "ar" ? settings.categoriesTitleAr : settings.categoriesTitleEn}
             </h2>
           </div>
           <Link
@@ -258,29 +259,12 @@ function Home() {
       <section className="border-y border-border/40 bg-card/30 py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {[
-              {
-                icon: ShieldCheck,
-                title: t.trust.secureCheckout,
-                sub: lang === "ar" ? "مشفر بالكامل" : "256-bit encrypted",
-              },
-              {
-                icon: Truck,
-                title: t.trust.egyptDelivery,
-                sub: lang === "ar" ? "كل محافظات مصر" : "All governorates",
-              },
-              {
-                icon: Package,
-                title: t.trust.easyReturns,
-                sub: lang === "ar" ? "سهل وسريع" : "Hassle-free",
-              },
-              {
-                icon: Star,
-                title: t.trust.warranty,
-                sub: lang === "ar" ? "ضمان أصلي" : "On all products",
-              },
-            ].map(({ icon: Icon, title, sub }) => (
-              <div key={title} className="flex flex-col items-center text-center gap-3 p-4">
+            {settings.trustCards.filter((card) => card.enabled).map((card, index) => {
+              const Icon = trustIcons[index % trustIcons.length];
+              const title = lang === "ar" ? card.titleAr || card.titleEn : card.titleEn || card.titleAr;
+              const sub = lang === "ar" ? card.subtitleAr || card.subtitleEn : card.subtitleEn || card.subtitleAr;
+              return (
+              <div key={card.id} className="flex flex-col items-center text-center gap-3 p-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
                   <Icon className="h-5 w-5" />
                 </div>
@@ -289,7 +273,7 @@ function Home() {
                   <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </section>
@@ -299,10 +283,10 @@ function Home() {
         <Reveal className="mb-8 flex items-end justify-between gap-4">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              {lang === "ar" ? "مميز" : "Featured"}
+              {lang === "ar" ? settings.featuredEyebrowAr : settings.featuredEyebrowEn}
             </p>
             <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              {lang === "ar" ? "أحدث المنتجات بالمخزن." : "Fresh from the workbench."}
+              {lang === "ar" ? settings.featuredTitleAr : settings.featuredTitleEn}
             </h2>
           </div>
         </Reveal>
@@ -320,10 +304,10 @@ function Home() {
         <Reveal className="mb-8 flex items-end justify-between gap-4">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              {lang === "ar" ? "الأكثر طلباً" : "Trending"}
+              {lang === "ar" ? settings.trendingEyebrowAr : settings.trendingEyebrowEn}
             </p>
             <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              {lang === "ar" ? "المنتجات الأكثر مبيعاً في مصر." : "What players are grabbing."}
+              {lang === "ar" ? settings.trendingTitleAr : settings.trendingTitleEn}
             </h2>
           </div>
           <Link

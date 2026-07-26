@@ -100,6 +100,28 @@ function normalizeSettings(value: unknown): StoreSettings {
       "Performance gaming gear, fast delivery, and secure checkout for players across Egypt.",
     heroSubtitleAr:
       source.heroSubtitleAr || "معدات جيمينج احترافية، توصيل سريع، ودفع آمن للاعبين في كل مصر.",
+    categoriesEyebrowEn: source.categoriesEyebrowEn || "Shop by category",
+    categoriesEyebrowAr: source.categoriesEyebrowAr || "تسوق حسب القسم",
+    categoriesTitleEn: source.categoriesTitleEn || "Pick your weapon.",
+    categoriesTitleAr: source.categoriesTitleAr || "اختر سلاحك في الجيم.",
+    featuredEyebrowEn: source.featuredEyebrowEn || "Featured",
+    featuredEyebrowAr: source.featuredEyebrowAr || "مميز",
+    featuredTitleEn: source.featuredTitleEn || "Fresh from the workbench.",
+    featuredTitleAr: source.featuredTitleAr || "أحدث المنتجات بالمخزن.",
+    trendingEyebrowEn: source.trendingEyebrowEn || "Trending",
+    trendingEyebrowAr: source.trendingEyebrowAr || "الأكثر طلباً",
+    trendingTitleEn: source.trendingTitleEn || "What players are grabbing.",
+    trendingTitleAr: source.trendingTitleAr || "المنتجات الأكثر مبيعاً في مصر.",
+    trustCards: Array.isArray(source.trustCards)
+      ? source.trustCards.map((card, index) => ({
+          id: String(card?.id || `trust-${index + 1}`).trim().toLowerCase(),
+          titleEn: String(card?.titleEn || "").trim(),
+          titleAr: String(card?.titleAr || card?.titleEn || "").trim(),
+          subtitleEn: String(card?.subtitleEn || "").trim(),
+          subtitleAr: String(card?.subtitleAr || card?.subtitleEn || "").trim(),
+          enabled: card?.enabled !== false,
+        })).filter((card) => card.id && (card.titleEn || card.titleAr))
+      : [],
     customCategories,
   };
 }
@@ -253,7 +275,7 @@ export const saveAdminProduct = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const product = normalizeProduct(data.product);
-    const { error } = await supabaseAdmin.from("products").upsert(productToSupabasePayload(product));
+    const { error } = await supabaseAdmin.from("products").upsert(productToSupabasePayload(product) as never);
 
     if (error) {
       const message = error.message || "";
@@ -267,7 +289,7 @@ export const saveAdminProduct = createServerFn({ method: "POST" })
 
       const fallback = await supabaseAdmin
         .from("products")
-        .upsert(productToSupabasePayload(product, false));
+        .upsert(productToSupabasePayload(product, false) as never);
       if (fallback.error) throw fallback.error;
     }
     return { ok: true as const, product };
