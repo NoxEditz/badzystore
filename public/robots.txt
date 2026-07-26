@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /checkout/
 
-Sitemap: https://badzystore.com/sitemap.xml
+Sitemap: https://badzystore.pages.dev/sitemap.xml
