@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Search, Menu, Globe, Shield, Moon, Sun, X } from "lucide-react";
+import { Search, Menu, Globe, Moon, Sun, X } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Logo } from "./Logo";
 import { CATEGORIES } from "@/data/products";
@@ -177,15 +177,6 @@ export function Header() {
             )}
           </button>
 
-          {/* Admin Link */}
-          <Link
-            to="/admin"
-            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-secondary hover:text-foreground hover:scale-110"
-            title="Admin Panel"
-          >
-            <Shield className="h-4 w-4" />
-          </Link>
-
           {/* Cart Drawer */}
           {mounted && <CartDrawer />}
 
@@ -245,10 +236,6 @@ export function Header() {
                 </Link>
                 <Link to="/contact" className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
                   {t.nav.contact}
-                </Link>
-                <Link to="/admin" className="rounded-lg px-3 py-2 text-sm text-primary hover:bg-secondary font-semibold flex items-center gap-2">
-                  <Shield className="h-3.5 w-3.5" />
-                  {t.nav.admin}
                 </Link>
               </div>
             </SheetContent>
