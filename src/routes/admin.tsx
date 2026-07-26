@@ -887,7 +887,7 @@ function ProductForm({
       oldPrice: oldPrice > 0 ? Number(oldPrice) : undefined,
       rating: product?.rating ?? 5.0,
       reviews: product?.reviews ?? 0,
-      image: image || "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800",
+      image: image || "",
       images: Array.from(
         new Set(
           images
