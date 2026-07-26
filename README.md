@@ -62,6 +62,17 @@ Required variables:
    npm run build
    ```
 
+## Supabase Database Setup
+
+After running the standard migrations in the Supabase SQL editor, you **must also** run `db/2026-07-26_server_side_orders_and_stock.sql`.
+
+This file:
+- Creates the atomic stock decrement function used during checkout.
+- Secures the `orders` table to service-role-only inserts (preventing client-side order manipulation).
+- Adds performance indexes on frequently queried columns.
+
+Without it, checkout will fail with a stock decrement error.
+
 ## Deployment
 
 This project is optimized for **Cloudflare Pages**.

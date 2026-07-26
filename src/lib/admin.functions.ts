@@ -263,8 +263,8 @@ export const saveAdminStoreSettings = createServerFn({ method: "POST" })
   });
 
 export const uploadAdminImage = createServerFn({ method: "POST" })
-  .validator((data: { name: string; type: string; base64: string; bucket: "product-images" | "category-images" }) => {
-    if (!data.name || !data.type || !data.base64 || !data.bucket) throw new Error("Invalid image payload");
+  .validator((data: { file: ArrayBuffer; filename: string; contentType: string }) => {
+    if (!data || !data.file || !data.filename || !data.contentType) throw new Error("Invalid image payload");
     return data;
   })
   .handler(async ({ data }) => {
@@ -272,30 +272,24 @@ export const uploadAdminImage = createServerFn({ method: "POST" })
     await requireAdmin();
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
-    // Cloudflare Edge safe base64 decoding (since Buffer might not be polyfilled)
-    const base64Data = data.base64.split(",").pop() || data.base64;
-    const binaryStr = atob(base64Data);
-    const bytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) {
-      bytes[i] = binaryStr.charCodeAt(i);
-    }
 
-    const ext = data.name.split(".").pop() ?? "jpg";
+    const bytes = new Uint8Array(data.file as ArrayBuffer);
+
+    const ext = data.filename.split(".").pop() ?? "jpg";
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
     const { data: uploadData, error } = await supabaseAdmin.storage
-      .from(data.bucket)
-      .upload(filename, bytes, { 
-        cacheControl: "3600", 
+      .from("product-images")
+      .upload(filename, bytes, {
+        cacheControl: "3600",
         upsert: false,
-        contentType: data.type 
+        contentType: data.contentType,
       });
 
     if (error) throw error;
 
     const { data: urlData } = supabaseAdmin.storage
-      .from(data.bucket)
+      .from("product-images")
       .getPublicUrl(uploadData.path);
 
     return { url: urlData.publicUrl };

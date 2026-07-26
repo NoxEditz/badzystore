@@ -1,6 +1,4 @@
-// Re-export the auto-generated Lovable Cloud Supabase client so existing
-// services can keep importing from "@/lib/supabase". The client is always
-// configured in this project (Lovable Cloud is enabled).
+// Supabase client re-export. Import supabase from here across all client-side services.
 
 export { supabase } from "@/integrations/supabase/client";
 export const isSupabaseConfigured = true;

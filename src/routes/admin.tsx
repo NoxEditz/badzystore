@@ -36,10 +36,7 @@ import {
   type OrderStatus,
   type PaymentStatus,
 } from "@/services/orderService";
-import {
-  getProducts,
-  uploadProductImage,
-} from "@/services/productService";
+import { getProducts } from "@/services/productService";
 import {
   fetchStoreSettings,
   getStoreSettings,
@@ -75,6 +72,7 @@ import {
   updateAdminProductStock,
   deleteAdminProduct,
   saveAdminStoreSettings,
+  uploadAdminImage,
 } from "@/lib/admin.functions";
 import { clearAdminOrders, getAdminOrders, updateAdminOrderStatus } from "@/lib/orders.functions";
 
@@ -1010,7 +1008,8 @@ function ProductForm({
                 if (!file) return;
                 setUploading(true);
                 try {
-                  const url = await uploadProductImage(file);
+                  const res = await uploadAdminImage({ data: { file: await file.arrayBuffer(), filename: file.name, contentType: file.type } });
+                  const url = res.url;
                   setImage(url);
                   setImages((prev) => (prev ? `${url}, ${prev}` : url));
                 } catch (err) {
@@ -1042,7 +1041,8 @@ function ProductForm({
                 if (!file) return;
                 setUploading(true);
                 try {
-                  const url = await uploadProductImage(file);
+                  const res = await uploadAdminImage({ data: { file: await file.arrayBuffer(), filename: file.name, contentType: file.type } });
+                  const url = res.url;
                   setImages((prev) => (prev ? `${prev}, ${url}` : url));
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Upload failed");
