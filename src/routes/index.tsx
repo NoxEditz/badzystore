@@ -4,8 +4,6 @@ import {
   Zap,
   Truck,
   ShieldCheck,
-  Headphones,
-  CreditCard,
   Star,
   Package,
   Users,
@@ -69,6 +67,13 @@ function Home() {
   const trending = products.slice(0, 8);
   const totalProducts = products.length;
   const totalReviews = products.reduce((acc, p) => acc + p.reviews, 0);
+  const marqueeItems = settings.announcementItems.filter((item) => item.enabled);
+  const fallbackMarqueeItems = [
+    lang === "ar" ? settings.announcementTextAr : settings.announcementTextEn,
+  ].filter(Boolean);
+  const visibleMarqueeItems = marqueeItems.length
+    ? marqueeItems.map((item) => (lang === "ar" ? item.textAr || item.textEn : item.textEn || item.textAr))
+    : fallbackMarqueeItems;
 
   return (
     <>
@@ -177,6 +182,7 @@ function Home() {
       </section>
 
       {/* ── Marquee Strip ── */}
+      {settings.announcementEnabled && visibleMarqueeItems.length > 0 && (
       <section className="relative overflow-hidden border-b border-border/60 bg-card/30 py-4">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" />
@@ -184,16 +190,9 @@ function Home() {
         <div className="animate-marquee flex w-max whitespace-nowrap text-sm">
           {[0, 1].map((dup) => (
             <div key={dup} className="flex items-center gap-10 pr-10">
-              {[
-                { icon: Truck, label: t.marquee.ship24h },
-                { icon: Zap, label: t.marquee.freeShipping },
-                { icon: CreditCard, label: t.marquee.cod },
-                { icon: ShieldCheck, label: t.marquee.warranty },
-                { icon: Headphones, label: t.marquee.support },
-                { icon: ShieldCheck, label: t.marquee.tested },
-              ].map(({ icon: Icon, label }, i) => (
+              {visibleMarqueeItems.map((label, i) => (
                 <div key={i} className="flex items-center gap-3 text-muted-foreground font-medium">
-                  <Icon className="h-4 w-4 text-primary" />
+                  <Zap className="h-4 w-4 text-primary" />
                   <span>{label}</span>
                   <span className="text-primary/40">◆</span>
                 </div>
@@ -202,6 +201,7 @@ function Home() {
           ))}
         </div>
       </section>
+      )}
 
       {/* ── Categories ── */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">

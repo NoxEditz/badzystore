@@ -144,6 +144,36 @@ function normalizeProduct(value: Product): Product {
   };
 }
 
+function productToSupabasePayload(product: Product, includeExtendedBadgeColumns = true) {
+  const payload: Record<string, unknown> = {
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    name_ar: product.nameAr,
+    description: product.shortDesc,
+    description_ar: product.shortDescAr,
+    price_egp: product.price,
+    old_price_egp: product.oldPrice,
+    category: product.category,
+    image: product.image,
+    images: product.images || [product.image].filter(Boolean),
+    stock: product.stock,
+    badge: product.badge,
+    specs: product.specs,
+    tags: product.tags,
+    rating: product.rating,
+    reviews_count: product.reviews,
+  };
+
+  if (includeExtendedBadgeColumns) {
+    payload.badge_color = product.badgeColor;
+    payload.badge_text_color = product.badgeTextColor;
+    payload.badge_style = product.badgeStyle;
+  }
+
+  return payload;
+}
+
 export const adminSignIn = createServerFn({ method: "POST" })
   .validator((data: { passkey: string }) => {
     if (
@@ -223,30 +253,23 @@ export const saveAdminProduct = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const product = normalizeProduct(data.product);
-    const { error } = await supabaseAdmin.from("products").upsert({
-      id: product.id,
-      slug: product.slug,
-      name: product.name,
-      name_ar: product.nameAr,
-      description: product.shortDesc,
-      description_ar: product.shortDescAr,
-      price_egp: product.price,
-      old_price_egp: product.oldPrice,
-      category: product.category,
-      image: product.image,
-      images: product.images || [product.image].filter(Boolean),
-      stock: product.stock,
-      badge: product.badge,
-      badge_color: product.badgeColor,
-      badge_text_color: product.badgeTextColor,
-      badge_style: product.badgeStyle,
-      specs: product.specs,
-      tags: product.tags,
-      rating: product.rating,
-      reviews_count: product.reviews,
-    });
+    const { error } = await supabaseAdmin.from("products").upsert(productToSupabasePayload(product));
 
-    if (error) throw error;
+    if (error) {
+      const message = error.message || "";
+      const missingExtendedBadgeColumn =
+        message.includes("badge_color") ||
+        message.includes("badge_text_color") ||
+        message.includes("badge_style") ||
+        message.includes("schema cache");
+
+      if (!missingExtendedBadgeColumn) throw error;
+
+      const fallback = await supabaseAdmin
+        .from("products")
+        .upsert(productToSupabasePayload(product, false));
+      if (fallback.error) throw fallback.error;
+    }
     return { ok: true as const, product };
   });
 

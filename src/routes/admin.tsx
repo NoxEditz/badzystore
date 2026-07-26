@@ -36,9 +36,6 @@ import {
 } from "@/services/orderService";
 import {
   getProducts,
-  updateProductStock,
-  saveProduct,
-  deleteProduct,
 } from "@/services/productService";
 import {
   fetchStoreSettings,
@@ -611,6 +608,8 @@ function ProductsTab({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [search, setSearch] = useState("");
+  const updateStock = useServerFn(updateAdminProductStock);
+  const removeProduct = useServerFn(deleteAdminProduct);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -692,7 +691,7 @@ function ProductsTab({
                     const val = parseInt(e.target.value, 10);
                     if (!isNaN(val)) {
                       try {
-                        await updateProductStock(p.id, val);
+                        await updateStock({ data: { id: p.id, stock: val } });
                         toast.success(`Stock updated for ${p.name}`);
                         onRefresh();
                       } catch (error) {
@@ -729,7 +728,7 @@ function ProductsTab({
                   onClick={async () => {
                     if (confirm(`Delete "${p.name}"?`)) {
                       try {
-                        await deleteProduct(p.id);
+                        await removeProduct({ data: { id: p.id } });
                         toast.success("Product deleted");
                         onRefresh();
                       } catch (error) {
@@ -859,14 +858,6 @@ function ProductForm({
             onChange={(e) => setName(e.target.value)}
             className="admin-input"
           />
-        <Field label="Gallery Images (comma separated)">
-          <input
-            value={images}
-            onChange={(e) => setImages(e.target.value)}
-            placeholder="https://... , https://..."
-            className="admin-input"
-          />
-        </Field>
         </Field>
         <Field label="Name (AR)">
           <input
@@ -927,6 +918,14 @@ function ProductForm({
             value={image}
             onChange={(e) => setImage(e.target.value)}
             placeholder="https://..."
+            className="admin-input"
+          />
+        </Field>
+        <Field label="Gallery Images (comma separated)">
+          <input
+            value={images}
+            onChange={(e) => setImages(e.target.value)}
+            placeholder="https://... , https://..."
             className="admin-input"
           />
         </Field>
