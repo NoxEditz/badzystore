@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect, useMemo, useCallback } from "react";
+
 import {
   Package,
   ShoppingBag,
@@ -28,8 +30,8 @@ import {
   DollarSign,
 } from "lucide-react";
 import {
-  getOrders,
-  updateOrderStatus,
+  mapOrderRow,
+
   type Order,
   type OrderStatus,
   type PaymentStatus,
@@ -63,7 +65,6 @@ export const Route = createFileRoute("/admin")({
 });
 
 /* ─────────────────────────────────────── Auth Gate ─────────────────── */
-import { useServerFn } from "@tanstack/react-start";
 import {
   adminSignIn,
   adminSignOut,
@@ -73,6 +74,8 @@ import {
   deleteAdminProduct,
   saveAdminStoreSettings,
 } from "@/lib/admin.functions";
+import { getAdminOrders, updateAdminOrderStatus } from "@/lib/orders.functions";
+
 
 function AdminPage() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -185,14 +188,17 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [settings, setSettings] = useState<StoreSettings>(getStoreSettings());
   const [loading, setLoading] = useState(true);
 
+  const fetchOrders = useServerFn(getAdminOrders);
+
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [o, p, s] = await Promise.all([getOrders(), getProducts(), fetchStoreSettings()]);
-    setOrders(o);
+    const [o, p, s] = await Promise.all([fetchOrders(), getProducts(), fetchStoreSettings()]);
+    setOrders(o.orders.map((row) => mapOrderRow(row as never)));
     setProducts(p);
     setSettings(s);
     setLoading(false);
-  }, []);
+  }, [fetchOrders]);
+
 
   useEffect(() => {
     loadData();
@@ -473,6 +479,8 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
 
 function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => void }) {
   const [expanded, setExpanded] = useState(false);
+  const setOrderStatus = useServerFn(updateAdminOrderStatus);
+
 
   const statusColors: Record<string, string> = {
     placed: "bg-blue-500/10 text-blue-400 border-blue-500/30",
@@ -527,7 +535,10 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
               value={o.orderStatus}
               onClick={(e) => e.stopPropagation()}
               onChange={async (e) => {
-                await updateOrderStatus(o.id, e.target.value as OrderStatus);
+                await setOrderStatus({
+                  data: { id: o.id, orderStatus: e.target.value as OrderStatus },
+                });
+
                 toast.success(`Order ${o.orderNumber} → ${e.target.value}`);
                 onRefresh();
               }}
@@ -543,7 +554,14 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
               value={o.paymentStatus}
               onClick={(e) => e.stopPropagation()}
               onChange={async (e) => {
-                await updateOrderStatus(o.id, o.orderStatus, e.target.value as PaymentStatus);
+                await setOrderStatus({
+                  data: {
+                    id: o.id,
+                    orderStatus: o.orderStatus,
+                    paymentStatus: e.target.value as PaymentStatus,
+                  },
+                });
+
                 toast.success(`Payment → ${e.target.value}`);
                 onRefresh();
               }}

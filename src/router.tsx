@@ -14,3 +14,12 @@ export const getRouter = () => {
 
   return router;
 };
+
+// Without this registration every `Route.useLoaderData()` / `useParams()` call
+// degrades to `any`, which is what was hiding type errors across the app.
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: ReturnType<typeof getRouter>;
+  }
+}
+

@@ -97,10 +97,8 @@ function CheckoutPage() {
   const [landmark, setLandmark] = useState("");
   const [paymentRef, setPaymentRef] = useState("");
 
-  // Card fields
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExp, setCardExp] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
+
+
 
   // Egyptian Phone Validation: 010, 011, 012, 015 + 8 digits
   const validateEgyptianPhone = (num: string) => {

@@ -33,20 +33,24 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
-CREATE POLICY IF NOT EXISTS "Public read product images"
+DROP POLICY IF EXISTS "Public read product images" ON storage.objects;
+CREATE POLICY "Public read product images"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'product-images');
 
-CREATE POLICY IF NOT EXISTS "Public read category images"
+DROP POLICY IF EXISTS "Public read category images" ON storage.objects;
+CREATE POLICY "Public read category images"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'category-images');
 
-CREATE POLICY IF NOT EXISTS "Admin manage product images"
+DROP POLICY IF EXISTS "Admin manage product images" ON storage.objects;
+CREATE POLICY "Admin manage product images"
   ON storage.objects FOR ALL
   USING (bucket_id = 'product-images' AND auth.role() = 'authenticated')
   WITH CHECK (bucket_id = 'product-images' AND auth.role() = 'authenticated');
 
-CREATE POLICY IF NOT EXISTS "Admin manage category images"
+DROP POLICY IF EXISTS "Admin manage category images" ON storage.objects;
+CREATE POLICY "Admin manage category images"
   ON storage.objects FOR ALL
   USING (bucket_id = 'category-images' AND auth.role() = 'authenticated')
   WITH CHECK (bucket_id = 'category-images' AND auth.role() = 'authenticated');
