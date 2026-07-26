@@ -299,17 +299,6 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
   return settings;
 }
 
-export async function saveStoreSettings(settings: StoreSettings): Promise<void> {
-  const normalized = normalizeStoreSettings(settings);
-  const { error } = await supabase.from("settings").upsert({
-    key: SUPABASE_SETTINGS_KEY,
-    value: normalized,
-    updated_at: new Date().toISOString(),
-  });
-
-  if (error) throw error;
-}
-
 export function updateStoreSettings(newSettings: Partial<StoreSettings>): StoreSettings {
   const current = getStoreSettings();
   const updated = normalizeStoreSettings({ ...current, ...newSettings });

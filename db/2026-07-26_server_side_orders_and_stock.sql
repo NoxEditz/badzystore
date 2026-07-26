@@ -5,7 +5,7 @@
 --    loses its INSERT grant and the permissive public INSERT policy.
 -- 3. Indexes for the admin dashboard and catalog pages.
 
-CREATE OR REPLACE FUNCTION public.decrement_product_stock(product_id UUID, quantity INT)
+CREATE OR REPLACE FUNCTION public.decrement_product_stock(product_id TEXT, quantity INT)
 RETURNS INT
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -29,9 +29,9 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.decrement_product_stock(UUID, INT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.decrement_product_stock(UUID, INT) FROM anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.decrement_product_stock(UUID, INT) TO service_role;
+REVOKE ALL ON FUNCTION public.decrement_product_stock(TEXT, INT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.decrement_product_stock(TEXT, INT) FROM anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.decrement_product_stock(TEXT, INT) TO service_role;
 
 -- Orders: the browser no longer writes directly.
 DROP POLICY IF EXISTS "Anyone can place an order" ON public.orders;

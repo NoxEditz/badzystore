@@ -1,6 +1,5 @@
 import { INITIAL_PRODUCTS, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadAdminImage } from "@/lib/admin.functions";
 
 /**
  * Read-only public catalog access.
@@ -115,24 +114,3 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
  * runtime fallback anymore.
  */
 export { INITIAL_PRODUCTS };
-
-export async function uploadProductImage(file: File): Promise<string> {
-  const base64 = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
-  const res = await uploadAdminImage({
-    data: {
-      name: file.name,
-      type: file.type,
-      base64,
-      bucket: "product-images",
-    },
-  });
-
-  if (res.error) throw new Error(res.error.message || "Upload failed");
-  return res.url;
-}
