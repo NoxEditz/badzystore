@@ -1,5 +1,6 @@
 import { INITIAL_PRODUCTS, type Product } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadAdminImage } from "@/lib/admin.functions";
 
 /**
  * Read-only public catalog access.
@@ -116,15 +117,22 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 export { INITIAL_PRODUCTS };
 
 export async function uploadProductImage(file: File): Promise<string> {
-  if (!supabase) throw new Error("Supabase not configured");
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await supabase.storage
-    .from("product-images")
-    .upload(filename, file, { cacheControl: "3600", upsert: false });
-  if (error) throw error;
-  const { data: urlData } = supabase.storage
-    .from("product-images")
-    .getPublicUrl(data.path);
-  return urlData.publicUrl;
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const res = await uploadAdminImage({
+    data: {
+      name: file.name,
+      type: file.type,
+      base64,
+      bucket: "product-images",
+    },
+  });
+
+  if (res.error) throw new Error(res.error.message || "Upload failed");
+  return res.url;
 }

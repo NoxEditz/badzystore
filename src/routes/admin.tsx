@@ -933,7 +933,7 @@ function ProductForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Name (EN)" required>
+        <Field label={isAr ? "الاسم (بالانجليزية)" : "Name (EN)"} required>
           <input
             required
             value={name}
@@ -941,7 +941,7 @@ function ProductForm({
             className="admin-input"
           />
         </Field>
-        <Field label="Name (AR)">
+        <Field label={isAr ? "الاسم (بالعربية)" : "Name (AR)"}>
           <input
             value={nameAr}
             onChange={(e) => setNameAr(e.target.value)}
@@ -952,7 +952,7 @@ function ProductForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Category" required>
+        <Field label={isAr ? "القسم" : "Category"} required>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
@@ -965,7 +965,7 @@ function ProductForm({
             ))}
           </select>
         </Field>
-        <Field label="Price (EGP)" required>
+        <Field label={isAr ? "السعر (ج.م)" : "Price (EGP)"} required>
           <input
             type="number"
             required
@@ -974,7 +974,7 @@ function ProductForm({
             className="admin-input"
           />
         </Field>
-        <Field label="Old Price (EGP)">
+        <Field label={isAr ? "السعر القديم (ج.م)" : "Old Price (EGP)"}>
           <input
             type="number"
             value={oldPrice}
@@ -986,7 +986,7 @@ function ProductForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Stock">
+        <Field label={isAr ? "المخزون" : "Stock"}>
           <input
             type="number"
             required
@@ -995,7 +995,7 @@ function ProductForm({
             className="admin-input"
           />
         </Field>
-        <Field label="Image URL">
+        <Field label={isAr ? "رابط الصورة" : "Image URL"}>
           <div className="flex flex-col gap-2">
             <input
               type="file"
@@ -1027,7 +1027,7 @@ function ProductForm({
             />
           </div>
         </Field>
-        <Field label="Gallery Images (comma separated)">
+        <Field label={isAr ? "صور المعرض (مفصولة بفاصلة)" : "Gallery Images (comma separated)"}>
           <div className="flex flex-col gap-2">
             <input
               type="file"
@@ -1059,14 +1059,14 @@ function ProductForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Description (EN)">
+        <Field label={isAr ? "الوصف (بالانجليزية)" : "Description (EN)"}>
           <textarea
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             className="admin-input !h-20 resize-none"
           />
         </Field>
-        <Field label="Description (AR)">
+        <Field label={isAr ? "الوصف (بالعربية)" : "Description (AR)"}>
           <textarea
             value={descAr}
             onChange={(e) => setDescAr(e.target.value)}
@@ -1077,7 +1077,7 @@ function ProductForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Manual Badge / Label">
+        <Field label={isAr ? "شارة مخصصة" : "Manual Badge / Label"}>
           <input
             value={badge}
             onChange={(e) => setBadge(e.target.value)}
@@ -1088,7 +1088,7 @@ function ProductForm({
             Leave blank to allow automatic labels from discount, stock, and tags.
           </p>
         </Field>
-        <Field label="Badge Style">
+        <Field label={isAr ? "نمط الشارة" : "Badge Style"}>
           <select value={badgeStyle} onChange={(e) => setBadgeStyle(e.target.value as Product["badgeStyle"])} className="admin-input">
             <option value="solid">Solid</option>
             <option value="outline">Outline</option>
@@ -1098,13 +1098,13 @@ function ProductForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Badge Color">
+        <Field label={isAr ? "لون الشارة" : "Badge Color"}>
           <input type="color" value={badgeColor} onChange={(e) => setBadgeColor(e.target.value)} className="admin-input h-11 p-1" />
         </Field>
-        <Field label="Badge Text Color">
+        <Field label={isAr ? "لون نص الشارة" : "Badge Text Color"}>
           <input type="color" value={badgeTextColor} onChange={(e) => setBadgeTextColor(e.target.value)} className="admin-input h-11 p-1" />
         </Field>
-        <Field label="Tags (comma separated)">
+        <Field label={isAr ? "الكلمات المفتاحية (مفصولة بفاصلة)" : "Tags (comma separated)"}>
           <input
             value={tags}
             onChange={(e) => setTags(e.target.value)}
@@ -1144,6 +1144,8 @@ function CategoriesTab({
   settings: StoreSettings;
   setSettings: (s: StoreSettings) => void;
 }) {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
   const builtIn = CATEGORIES;
   const [label, setLabel] = useState("");
   const [labelAr, setLabelAr] = useState("");
@@ -1229,7 +1231,7 @@ function CategoriesTab({
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h3 className="font-display text-lg font-bold mb-4">Built-in Categories</h3>
+        <h3 className="font-display text-lg font-bold mb-4">{isAr ? "الأقسام الأساسية" : "Built-in Categories"}</h3>
         <div className="grid gap-2 sm:grid-cols-2">
           {builtIn.map((c) => (
             <div
@@ -1246,7 +1248,7 @@ function CategoriesTab({
                 onClick={() => editBuiltIn(c)}
                 className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase text-primary transition hover:bg-primary/20"
               >
-                Edit
+                {isAr ? "تعديل" : "Edit"}
               </button>
             </div>
           ))}
@@ -1254,9 +1256,9 @@ function CategoriesTab({
       </div>
 
       <div>
-        <h3 className="font-display text-lg font-bold mb-4">Custom Categories</h3>
+        <h3 className="font-display text-lg font-bold mb-4">{isAr ? "الأقسام المخصصة" : "Custom Categories"}</h3>
         {settings.customCategories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No custom categories yet. Add one below.</p>
+          <p className="text-sm text-muted-foreground">{isAr ? "لا توجد أقسام مخصصة بعد. أضف واحداً بالأسفل." : "No custom categories yet. Add one below."}</p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 mb-4">
             {settings.customCategories.map((c) => (
@@ -1285,9 +1287,9 @@ function CategoriesTab({
           onSubmit={addCategory}
           className="rounded-xl border border-border/60 bg-card p-5 space-y-3"
         >
-          <h4 className="text-sm font-bold">Add New Category</h4>
+          <h4 className="text-sm font-bold">{isAr ? "إضافة/تعديل قسم" : "Add/Edit Category"}</h4>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Label (EN)" required>
+            <Field label={isAr ? "الاسم (بالانجليزية)" : "Label (EN)"} required>
               <input
                 required
                 value={label}
@@ -1296,7 +1298,7 @@ function CategoriesTab({
                 className="admin-input"
               />
             </Field>
-            <Field label="Label (AR)">
+            <Field label={isAr ? "الاسم (بالعربية)" : "Label (AR)"}>
               <input
                 value={labelAr}
                 onChange={(e) => setLabelAr(e.target.value)}
@@ -1305,10 +1307,10 @@ function CategoriesTab({
                 className="admin-input"
               />
             </Field>
-            <Field label="Emoji / Icon">
+            <Field label={isAr ? "رمز تعبيري (Emoji)" : "Emoji (Optional)"}>
               <input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="🖱️" className="admin-input" />
             </Field>
-            <Field label="Image URL">
+            <Field label={isAr ? "رابط الصورة" : "Image URL"}>
               <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..." className="admin-input" />
             </Field>
             <Field label="Sort Order">
@@ -1725,7 +1727,7 @@ function SettingsTab({
         </div>
 
         <div className="border-t border-border/60 pt-5 mt-5">
-          <h4 className="font-display text-md font-bold mb-4">Top Announcement Banner</h4>
+          <h4 className="font-display text-md font-bold mb-4">{isAr ? "شريط الإعلانات العلوي" : "Top Announcement Banner"}</h4>
 
           <label className="flex items-center gap-3 mb-4 cursor-pointer">
             <input
@@ -1734,12 +1736,12 @@ function SettingsTab({
               onChange={(e) => setSettings({ ...settings, announcementEnabled: e.target.checked })}
               className="accent-primary h-4 w-4"
             />
-            <span className="text-sm font-semibold">Enable Announcement Banner</span>
+            <span className="text-sm font-semibold">{isAr ? "تفعيل شريط الإعلانات" : "Enable Announcement Banner"}</span>
           </label>
 
           {settings.announcementEnabled && (
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Banner Text (EN)">
+              <Field label={isAr ? "نص الإعلان (انجليزي)" : "Banner Text (EN)"}>
                 <input
                   type="text"
                   value={settings.announcementTextEn}
@@ -1748,7 +1750,7 @@ function SettingsTab({
                   className="admin-input"
                 />
               </Field>
-              <Field label="Banner Text (AR)">
+              <Field label={isAr ? "نص الإعلان (عربي)" : "Banner Text (AR)"}>
                 <input
                   type="text"
                   value={settings.announcementTextAr}
