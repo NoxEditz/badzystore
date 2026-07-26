@@ -38,6 +38,7 @@ import {
 } from "@/services/orderService";
 import {
   getProducts,
+  uploadProductImage,
 } from "@/services/productService";
 import {
   fetchStoreSettings,
@@ -832,6 +833,7 @@ function ProductForm({
   const [tags, setTags] = useState(
     (product?.tags?.length ? product.tags : [product?.category ?? "mice"]).join(", "),
   );
+  const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -965,20 +967,65 @@ function ProductForm({
           />
         </Field>
         <Field label="Image URL">
-          <input
-            value={image}
-            onChange={(e) => setImage(e.target.value)}
-            placeholder="https://..."
-            className="admin-input"
-          />
+          <div className="flex flex-col gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploading(true);
+                try {
+                  const url = await uploadProductImage(file);
+                  setImage(url);
+                  setImages((prev) => (prev ? `${url}, ${prev}` : url));
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Upload failed");
+                } finally {
+                  setUploading(false);
+                }
+              }}
+              disabled={uploading}
+              className="text-xs file:mr-2 file:rounded-md file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
+            />
+            {uploading && <span className="text-xs text-muted-foreground">Uploading…</span>}
+            <input
+              value={image}
+              readOnly
+              onChange={(e) => setImage(e.target.value)}
+              placeholder="https://..."
+              className="admin-input opacity-60"
+            />
+          </div>
         </Field>
         <Field label="Gallery Images (comma separated)">
-          <input
-            value={images}
-            onChange={(e) => setImages(e.target.value)}
-            placeholder="https://... , https://..."
-            className="admin-input"
-          />
+          <div className="flex flex-col gap-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploading(true);
+                try {
+                  const url = await uploadProductImage(file);
+                  setImages((prev) => (prev ? `${prev}, ${url}` : url));
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Upload failed");
+                } finally {
+                  setUploading(false);
+                }
+              }}
+              disabled={uploading}
+              className="text-xs file:mr-2 file:rounded-md file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20"
+            />
+            <input
+              value={images}
+              onChange={(e) => setImages(e.target.value)}
+              placeholder="https://... , https://..."
+              className="admin-input"
+            />
+          </div>
         </Field>
       </div>
 
@@ -1619,7 +1666,7 @@ function SettingsTab({
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label="WhatsApp Number (+20...)">
             <input
               type="text"
@@ -1633,6 +1680,14 @@ function SettingsTab({
               type="text"
               value={settings.instapayHandle}
               onChange={(e) => setSettings({ ...settings, instapayHandle: e.target.value })}
+              className="admin-input"
+            />
+          </Field>
+          <Field label="Support Email">
+            <input
+              type="email"
+              value={settings.supportEmail}
+              onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
               className="admin-input"
             />
           </Field>

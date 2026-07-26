@@ -7,6 +7,7 @@ export type StoreSettings = {
   lowStockThreshold: number;
   whatsappNumber: string;
   instapayHandle: string;
+  supportEmail: string;
   announcementEnabled: boolean;
   announcementTextEn: string;
   announcementTextAr: string;
@@ -69,6 +70,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   lowStockThreshold: 5,
   whatsappNumber: CONFIG.whatsappNumber,
   instapayHandle: CONFIG.instapayHandle,
+  supportEmail: "",
   announcementEnabled: true,
   announcementTextEn: "Free shipping on orders over 2,500 EGP!",
   announcementTextAr: "شحن مجاني للطلبات فوق 2,500 ج.م!",
@@ -239,6 +241,7 @@ export function normalizeStoreSettings(value: unknown): StoreSettings {
     lowStockThreshold: Number(source.lowStockThreshold) || DEFAULT_STORE_SETTINGS.lowStockThreshold,
     whatsappNumber: source.whatsappNumber || DEFAULT_STORE_SETTINGS.whatsappNumber,
     instapayHandle: source.instapayHandle || DEFAULT_STORE_SETTINGS.instapayHandle,
+    supportEmail: source.supportEmail || DEFAULT_STORE_SETTINGS.supportEmail,
     announcementEnabled: source.announcementEnabled !== false,
     announcementTextEn: source.announcementTextEn || DEFAULT_STORE_SETTINGS.announcementTextEn,
     announcementTextAr: source.announcementTextAr || DEFAULT_STORE_SETTINGS.announcementTextAr,

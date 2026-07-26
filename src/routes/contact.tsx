@@ -63,10 +63,12 @@ function ContactPage() {
               <Phone className="h-4 w-4 text-primary" />
               <span>WhatsApp / Phone: +20 {settings.whatsappNumber.slice(2)}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 text-primary" />
-              <span>Email: support@badzystore.com</span>
-            </div>
+            {settings.supportEmail && (
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-primary" />
+                <span>Email: {settings.supportEmail}</span>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <MapPin className="h-4 w-4 text-primary" />
               <span>Alexandria & Cairo, Egypt</span>

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { CONFIG } from "@/lib/config";
 import {
   Star,
   Check,
@@ -61,7 +62,7 @@ export const Route = createFileRoute("/product/$slug")({
       },
       offers: {
         "@type": "Offer",
-        url: `https://badzystore.com/product/${product.slug}`,
+        url: `https://${CONFIG.storeDomain}/product/${product.slug}`,
         priceCurrency: "EGP",
         price: product.price,
         itemCondition: "https://schema.org/NewCondition",

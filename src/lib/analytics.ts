@@ -14,6 +14,7 @@ export function initAnalytics() {
     function gtag(...args: any[]) {
       (window as any).dataLayer.push(args);
     }
+    (window as any).gtag = gtag;
     gtag("js", new Date());
     gtag("config", CONFIG.gaMeasurementId);
   }
@@ -31,5 +32,7 @@ export function initAnalytics() {
 
 export function trackEvent(eventName: string, params?: Record<string, any>) {
   if (typeof window === "undefined") return;
-  console.log(`[Analytics Event] ${eventName}`, params || {});
+  if (typeof (window as any).gtag === "function") {
+    (window as any).gtag("event", eventName, params ?? {});
+  }
 }

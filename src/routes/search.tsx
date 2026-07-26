@@ -1,7 +1,8 @@
 import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Search as SearchIcon } from "lucide-react";
-import { PRODUCTS, type Product } from "@/data/products";
+import { type Product } from "@/data/products";
+import { getProducts } from "@/services/productService";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
@@ -21,22 +22,34 @@ function SearchPage() {
 
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
       return;
     }
-    const q = query.toLowerCase();
-    const filtered = PRODUCTS.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.nameAr && p.nameAr.toLowerCase().includes(q)) ||
-        p.category.toLowerCase().includes(q) ||
-        p.shortDesc.toLowerCase().includes(q) ||
-        p.tags.some((tag) => tag.toLowerCase().includes(q)),
-    );
-    setResults(filtered);
+    const fetchAndFilter = async () => {
+      setLoading(true);
+      try {
+        const products = await getProducts();
+        const q = query.toLowerCase();
+        const filtered = products.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            (p.nameAr && p.nameAr.toLowerCase().includes(q)) ||
+            p.category.toLowerCase().includes(q) ||
+            p.shortDesc.toLowerCase().includes(q) ||
+            p.tags.some((tag) => tag.toLowerCase().includes(q)),
+        );
+        setResults(filtered);
+      } catch (err) {
+        console.error("Failed to fetch products for search", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAndFilter();
   }, [query]);
 
   return (
@@ -61,7 +74,11 @@ function SearchPage() {
         </p>
       )}
 
-      {results.length > 0 ? (
+      {loading ? (
+        <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
+          Loading...
+        </div>
+      ) : results.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {results.map((p) => (
             <ProductCard key={p.id} product={p} />

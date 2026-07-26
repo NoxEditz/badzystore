@@ -114,3 +114,17 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
  * runtime fallback anymore.
  */
 export { INITIAL_PRODUCTS };
+
+export async function uploadProductImage(file: File): Promise<string> {
+  if (!supabase) throw new Error("Supabase not configured");
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { data, error } = await supabase.storage
+    .from("product-images")
+    .upload(filename, file, { cacheControl: "3600", upsert: false });
+  if (error) throw error;
+  const { data: urlData } = supabase.storage
+    .from("product-images")
+    .getPublicUrl(data.path);
+  return urlData.publicUrl;
+}

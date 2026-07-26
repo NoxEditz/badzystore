@@ -9,6 +9,7 @@ import { DICTIONARY } from "@/lib/i18n";
 import { toast } from "sonner";
 import { getPrimaryProductBadge, getProductBadgeStyle } from "@/services/catalogService";
 import { getStoreSettings } from "@/services/settingsService";
+import { trackEvent } from "@/lib/analytics";
 
 // Wishlist persisted to localStorage
 function useWishlist(id: string) {
@@ -82,6 +83,21 @@ export const ProductCard = memo(function ProductCard({
     (e: React.MouseEvent) => {
       e.preventDefault();
       if (isOutOfStock) return;
+
+      trackEvent("add_to_cart", {
+        currency: "EGP",
+        value: product.price,
+        items: [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            item_category: product.category,
+            price: product.price,
+            quantity: 1,
+          },
+        ],
+      });
+
       add(product);
       setCartBouncing(true);
       setTimeout(() => setCartBouncing(false), 500);

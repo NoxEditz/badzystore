@@ -14,6 +14,8 @@ import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
+import { getProducts } from "@/services/productService";
 
 export const EGYPT_GOVERNORATES = [
   "Alexandria",
@@ -130,6 +132,32 @@ function CheckoutPage() {
     setSubmitting(true);
 
     try {
+      // Validate Stock
+      const liveProducts = await getProducts();
+      for (const line of lines) {
+        const live = liveProducts.find((p) => p.id === line.id);
+        if (!live || live.stock < line.qty) {
+          toast.error(
+            lang === "ar"
+              ? `المنتج ${line.name} غير متوفر بالكمية المطلوبة.`
+              : `Item ${line.name} is out of stock or requested quantity exceeds available stock.`,
+          );
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      trackEvent("begin_checkout", {
+        currency: "EGP",
+        value: total,
+        items: lines.map((l) => ({
+          item_id: l.id,
+          item_name: l.name,
+          price: l.price,
+          quantity: l.qty,
+        })),
+      });
+
       // Process through payment provider abstraction
       const provider = getPaymentProvider(paymentMethod);
       const payRes = await provider.processPayment({
@@ -160,6 +188,18 @@ function CheckoutPage() {
         items: lines.map((l) => ({ id: l.id, qty: l.qty })),
         paymentMethod,
         paymentReference: paymentRef || payRes.transactionId,
+      });
+
+      trackEvent("purchase", {
+        transaction_id: order.orderNumber,
+        currency: "EGP",
+        value: total,
+        items: lines.map((l) => ({
+          item_id: l.id,
+          item_name: l.name,
+          price: l.price,
+          quantity: l.qty,
+        })),
       });
 
       clear();

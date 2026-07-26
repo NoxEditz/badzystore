@@ -1,356 +1,82 @@
-# Badzy Store — دليل التشغيل بالعربي
+# Badzy Store
 
-هذا المشروع هو متجر إلكتروني لإكسسوارات الجيمينج في مصر. المشروع مبني باستخدام **React 19** و **TanStack Start** و **TanStack Router** و **Tailwind CSS v4** و **Supabase**.
+Badzy Store is a high-performance, bilingual (English & Arabic) e-commerce storefront built with modern web technologies. It is designed to be fully standalone, robust, and easily deployable to edge environments like Cloudflare Pages.
 
-الهدف من هذا الملف أن يشرح لك المتطلبات وخطوات التشغيل والنشر خطوة بخطوة بطريقة سهلة.
+## Tech Stack
 
----
+- **Framework**: [TanStack Start](https://tanstack.com/start) (React-based, file-based routing)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/) (Client state, Cart, Lang)
+- **Database / Auth / Storage**: [Supabase](https://supabase.com/)
+- **Deployment**: [Cloudflare Pages](https://pages.cloudflare.com/)
 
-## 1. المتطلبات الأساسية
+> **Note:** This project does not use any third-party closed-source build platforms. It relies entirely on standard open-source tools and self-configured environment variables.
 
-قبل ما تشغل المشروع، تأكد إن الحاجات دي موجودة عندك:
+## Key Features
 
-| المطلوب | ليه محتاجه؟ | ملاحظة بسيطة |
-|---|---|---|
-| Node.js | لتشغيل أوامر المشروع وتثبيت المكتبات | يفضل نسخة حديثة مثل Node 20 أو أحدث |
-| npm | لتثبيت الحزم وتشغيل الأوامر | يأتي غالبًا مع Node.js |
-| Git | لرفع المشروع على GitHub ومتابعة التغييرات | مهم للنشر والتحديثات |
-| حساب GitHub | لحفظ كود المشروع أونلاين | الريبو الحالي يمكن رفعه على GitHub |
-| حساب Supabase | قاعدة البيانات والطلبات والإعدادات | مهم جدًا لتشغيل الطلبات واللوحة |
-| حساب Cloudflare | أفضل اختيار مجاني للنشر | المشروع مبني بطريقة مناسبة لـ Cloudflare/Nitro |
-| رقم WhatsApp Business | لاستقبال رسائل العملاء والطلبات | الرقم يجب يكون بصيغة دولية للروابط |
-| InstaPay أو تحويل بنكي | لاستقبال المدفوعات اليدوية | مناسب كبداية قبل بوابة دفع حقيقية |
+1. **Bilingual Support (EN/AR)**
+   Seamless real-time switching between English and Arabic, including RTL layout support.
+2. **Dynamic Store Settings & Catalog**
+   The storefront is fully manageable via the Admin dashboard (`/admin`), where you can add categories, update products, and customize store settings without changing any code.
+3. **Cart & Checkout Flow**
+   A fast, edge-rendered checkout process that handles both Cash on Delivery (COD) and InstaPay/Bank Transfer. Server-side validation prevents out-of-stock items from being purchased.
+4. **SEO & Metadata**
+   Automatically generated Open Graph tags, JSON-LD structured data for products, and SEO-friendly URLs.
+5. **Analytics Integration**
+   Built-in Google Analytics (GA4) with real tracking for `add_to_cart`, `begin_checkout`, and `purchase` events.
 
----
+## Prerequisites
 
-## 2. تشغيل المشروع على جهازك
+- Node.js (v18+)
+- npm or pnpm
+- A [Supabase](https://supabase.com) project
 
-### الخطوة 1: تثبيت المكتبات
+## Environment Variables
 
-```bash
-npm install
-```
-
-**شرح:** هذا الأمر ينزل كل المكتبات التي يحتاجها المشروع من `package.json`.
-
-### الخطوة 2: تشغيل الموقع محليًا
-
-```bash
-npm run dev
-```
-
-**شرح:** هذا يشغل نسخة تطوير من الموقع على جهازك. بعد التشغيل، افتح الرابط الذي يظهر في التيرمنال، غالبًا يكون مثل:
-
-```text
-http://localhost:5173
-```
-
-### الخطوة 3: تجربة بناء المشروع
+Copy the `.env.example` file to `.env` (or set them in your deployment dashboard) and fill in the values:
 
 ```bash
-npm run build
+cp .env.example .env
 ```
 
-**شرح:** هذا يتأكد أن المشروع يقدر يشتغل كنسخة إنتاج جاهزة للنشر. لو فيه أخطاء مهمة، هتظهر هنا.
-
-### أوامر مفيدة إضافية
-
-```bash
-npm run lint
-npm run format
-npm run preview
-```
-
-**شرح سريع:**
-
-- `npm run lint`: يفحص الكود لاكتشاف مشاكل أو أخطاء تنسيق.
-- `npm run format`: يرتب شكل الملفات باستخدام Prettier.
-- `npm run preview`: يعرض نسخة قريبة من نسخة الإنتاج بعد البناء.
-
----
-
-## 3. ملف البيئة `.env`
-
-أنشئ ملف اسمه `.env` في جذر المشروع، وضع فيه القيم الخاصة بك.
-
-> مهم: لا ترفع ملف `.env` على GitHub لأنه يحتوي على مفاتيح سرية.
-
-### متغيرات Supabase المطلوبة
-
-```env
-VITE_SUPABASE_URL="https://your-project-id.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_xxxxxxxxxxxxxxxxx"
-
-SUPABASE_URL="https://your-project-id.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
-```
-
-**شرح:**
-
-- `VITE_SUPABASE_URL`: رابط مشروع Supabase الذي يستخدمه الموقع.
-- `VITE_SUPABASE_PUBLISHABLE_KEY`: المفتاح العام الآمن للاستخدام في الواجهة.
-- `SUPABASE_URL`: نفس رابط Supabase لكن يستخدم في السيرفر.
-- `SUPABASE_SERVICE_ROLE_KEY`: مفتاح حساس جدًا يستخدم للعمليات الإدارية. لا تضعه داخل أي متغير يبدأ بـ `VITE_`.
-
-لو حساب Supabase عندك يستخدم الاسم القديم للمفتاح، يمكنك استخدام:
-
-```env
-VITE_SUPABASE_ANON_KEY="your-anon-key"
-```
-
-### متغيرات لوحة الإدارة
-
-```env
-ADMIN_PASSKEY="ضع-كلمة-سر-قوية-وطويلة"
-ADMIN_SESSION_SECRET="ضع-سر-جلسات-طويل-وعشوائي"
-```
-
-**شرح:**
-
-- `ADMIN_PASSKEY`: كلمة الدخول للوحة الإدارة.
-- `ADMIN_SESSION_SECRET`: سر يستخدم لحماية جلسة الأدمن.
-
-في التطوير المحلي فقط، لو `ADMIN_PASSKEY` غير موجود، المشروع يستخدم `6565`. لا تعتمد على هذا في النشر الحقيقي.
-
-لتوليد سر قوي، شغل:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-### إعدادات المتجر المهمة
-
-```env
-VITE_STORE_DOMAIN="https://your-domain.com"
-VITE_WHATSAPP_NUMBER="2010XXXXXXXX"
-VITE_INSTAPAY_HANDLE="yourname@instapay"
-VITE_FREE_SHIPPING_THRESHOLD="2500"
-VITE_DEFAULT_SHIPPING_FEE="50"
-```
-
-**شرح:**
-
-- `VITE_STORE_DOMAIN`: رابط الدومين الحقيقي للمتجر.
-- `VITE_WHATSAPP_NUMBER`: رقم واتساب بصيغة دولية بدون `+` أو مسافات، مثال: `201001234567`.
-- `VITE_INSTAPAY_HANDLE`: عنوان InstaPay الذي يدفع عليه العميل.
-- `VITE_FREE_SHIPPING_THRESHOLD`: أقل مبلغ للحصول على شحن مجاني.
-- `VITE_DEFAULT_SHIPPING_FEE`: تكلفة الشحن الافتراضية.
-
-لو لم تضع هذه القيم، يوجد قيم افتراضية داخل `src/lib/config.ts`، لكنها ليست مناسبة للإطلاق الحقيقي.
-
-### متغيرات اختيارية للمستقبل
-
-```env
-VITE_PAYMOB_PUBLIC_KEY=""
-VITE_STRIPE_PUBLIC_KEY=""
-VITE_BOSTA_API_KEY=""
-VITE_MYLERZ_API_KEY=""
-VITE_GA_MEASUREMENT_ID="G-XXXXXXXXXX"
-VITE_META_PIXEL_ID=""
-VITE_TIKTOK_PIXEL_ID=""
-```
-
-**شرح:** هذه القيم خاصة بالدفع والشحن والتحليلات. اتركها فارغة لو لم تكن مفعلة بعد.
-
----
-
-## 4. إعداد Supabase خطوة بخطوة
-
-### الخطوة 1: إنشاء مشروع Supabase
-
-افتح:
-
-```text
-https://supabase.com
-```
-
-واعمل مشروع جديد.
-
-**شرح:** Supabase هو المكان الذي يخزن المنتجات والطلبات والإعدادات.
-
-### الخطوة 2: نسخ مفاتيح API
-
-من لوحة Supabase افتح:
-
-```text
-Project Settings → API
-```
-
-ثم انسخ الرابط والمفاتيح إلى ملف `.env`.
-
-**شرح:** بدون هذه القيم، الموقع لن يستطيع الاتصال بقاعدة البيانات.
-
-### الخطوة 3: تشغيل ملف قاعدة البيانات
-
-افتح SQL Editor داخل Supabase، ثم شغل محتوى الملف:
-
-```text
-supabase/schema.sql
-```
-
-**شرح:** هذا ينشئ الجداول الأساسية مثل المنتجات والطلبات والإعدادات.
-
-### الخطوة 4: تطبيق ملفات migrations إن وجدت
-
-راجع مجلد:
-
-```text
-supabase/migrations/
-```
-
-وشغل أي تعديلات غير موجودة في قاعدة البيانات.
-
-**شرح:** ملفات migrations تضيف تحديثات إضافية على قاعدة البيانات.
-
-### الخطوة 5: تفعيل الحماية RLS
-
-فعل Row Level Security على الجداول المهمة.
-
-**شرح:** RLS يمنع أي شخص من قراءة أو تعديل بيانات لا يملك صلاحية عليها.
-
-### أقل صلاحيات مطلوبة
-
-- `products`: قراءة عامة للمنتجات، وتعديل للأدمن فقط.
-- `orders`: العميل يقدر يعمل طلب، والأدمن فقط يقرأ ويعدل الطلبات.
-- `settings`: قراءة عامة للإعدادات الآمنة، وتعديل للأدمن فقط.
-- Storage: قراءة عامة لصور المنتجات، ورفع/حذف للأدمن فقط.
-
----
-
-## 5. الدفع الحالي
-
-طرق الدفع المناسبة للإطلاق الآن:
-
-- **الدفع عند الاستلام:** مناسب كبداية وسهل للعملاء.
-- **InstaPay أو تحويل بنكي:** العميل يكتب رقم العملية، والأدمن يراجع الدفع يدويًا.
-
-طرق لا تفعلها إلا بعد تكامل حقيقي:
-
-- الدفع بالكارت.
-- Fawry.
-- أي بوابة دفع تحتاج تحقق من السيرفر.
-
-**شرح:** الدفع الحقيقي لازم يتأكد من السيرفر أو من لوحة مزود الدفع، وليس من الواجهة فقط.
-
----
-
-## 6. النشر على الإنترنت
-
-أفضل اختيار لهذا المشروع هو Cloudflare لأنه متوافق مع بناء Nitro الموجود في المشروع.
-
-### الخطوة 1: ارفع المشروع على GitHub
-
-```bash
-git add -A
-git commit -m "Update project"
-git push
-```
-
-**شرح:** GitHub يحفظ نسخة المشروع، ومنها منصة النشر تأخذ الكود.
-
-### الخطوة 2: افتح Cloudflare
-
-اذهب إلى:
-
-```text
-https://pages.cloudflare.com
-```
-
-أو:
-
-```text
-https://workers.cloudflare.com
-```
-
-**شرح:** Cloudflare سيبني المشروع ويشغله على الإنترنت.
-
-### الخطوة 3: إعداد أوامر النشر
-
-استخدم هذه القيم:
-
-```text
-Install command: npm install
-Build command: npm run build
-```
-
-**شرح:** أمر التثبيت ينزل المكتبات، وأمر البناء يجهز نسخة الإنتاج.
-
-### الخطوة 4: أضف متغيرات البيئة
-
-ضع نفس قيم `.env` داخل إعدادات Cloudflare Environment Variables.
-
-**شرح:** الموقع على الإنترنت لا يرى ملف `.env` المحلي، لذلك لازم تضيف القيم في لوحة النشر.
-
-### الخطوة 5: اختبر الموقع بعد النشر
-
-تأكد من الآتي:
-
-- الصفحة الرئيسية تفتح.
-- صفحة المتجر والمنتجات تعمل.
-- إنشاء طلب جديد يظهر داخل Supabase.
-- لوحة الإدارة تعمل بكلمة `ADMIN_PASSKEY`.
-- رابط WhatsApp يفتح على الرقم الصحيح.
-
----
-
-## 7. قائمة مراجعة قبل الإطلاق
-
-- [ ] تم ضبط Supabase URL والمفاتيح.
-- [ ] تم ضبط `ADMIN_PASSKEY` و `ADMIN_SESSION_SECRET` بقيم قوية.
-- [ ] تم تشغيل `supabase/schema.sql`.
-- [ ] تم تفعيل RLS والصلاحيات.
-- [ ] تم وضع رقم WhatsApp الحقيقي.
-- [ ] تم وضع بيانات InstaPay أو التحويل البنكي الحقيقية.
-- [ ] تم تجربة طلب كامل من البداية للنهاية.
-- [ ] تم التأكد أن الطلب يظهر في لوحة الأدمن وSupabase.
-- [ ] تم مراجعة صفحات FAQ والضمان والاسترجاع والتواصل.
-- [ ] تم تعديل `public/robots.txt` و `public/sitemap.xml` للدومين الحقيقي قبل SEO النهائي.
-- [ ] تم استبدال الصور التجريبية بصور المنتجات الحقيقية.
-
----
-
-## 8. ملاحظات أمان مهمة
-
-- لا تضع `SUPABASE_SERVICE_ROLE_KEY` داخل أي متغير يبدأ بـ `VITE_`.
-- لا ترفع ملف `.env` على GitHub.
-- لا تستخدم كلمة سر سهلة للوحة الإدارة.
-- فعل RLS قبل نشر الموقع للعملاء.
-- لا تعتمد على تحقق الدفع من الواجهة فقط.
-- المفاتيح التي تبدأ بـ `VITE_` تظهر في ملفات المتصفح، لذلك لا تضع فيها أسرار.
-
----
-
-## 9. ملفات التصميم المهمة
-
-- اللوجو: `public/logo.png` و `public/logo.webp`
-- الأيقونات: `public/favicon.ico` و `public/favicon-32.png` و `public/favicon-192.png`
-- صور المنتجات: داخل `src/assets/products/` أو يمكن نقلها لاحقًا إلى Supabase Storage.
-
----
-
-## 10. ملخص سريع جدًا
-
-لو عايز تشغل المشروع بسرعة:
-
-```bash
-npm install
-npm run dev
-```
-
-لو عايز تتأكد أنه جاهز للنشر:
-
-```bash
-npm run build
-```
-
-لو عايز تطلقه فعليًا:
-
-1. جهز Supabase.
-2. ضع متغيرات `.env`.
-3. ارفع المشروع على GitHub.
-4. انشره على Cloudflare.
-5. جرب طلب كامل قبل استقبال عملاء حقيقيين.
-
----
-
-تم بناء Badzy Store للجيمرز في مصر. 🎮
+Required variables:
+- `VITE_SUPABASE_URL`: Your Supabase project URL.
+- `VITE_SUPABASE_PUBLISHABLE_KEY` (or `VITE_SUPABASE_ANON_KEY`): Your Supabase anonymous key.
+- `VITE_GA_MEASUREMENT_ID`: Google Analytics 4 Measurement ID (e.g., `G-XXXXXXXXXX`).
+- `VITE_STORE_DOMAIN`: The public URL of the store (e.g., `https://badzystore.com`).
+
+## Getting Started
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+## Deployment
+
+This project is optimized for **Cloudflare Pages**.
+
+1. Connect your repository to Cloudflare Pages.
+2. Set the build command to `npm run build`.
+3. Set the output directory to `dist` (or `.output/public` based on TanStack Start output configuration).
+4. Add the required environment variables in the Cloudflare Pages settings.
+
+## Admin Dashboard
+
+Access the admin dashboard at `/admin`.
+Authentication requires a passkey set in your Supabase configuration (custom logic depending on your setup). The dashboard allows you to:
+- Manage orders
+- Add/Edit/Delete products and manage stock levels
+- Upload product images to Supabase Storage
+- Manage custom categories
+- Adjust store settings (shipping fees, banners, trust cards, contact info)
