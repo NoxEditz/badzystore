@@ -862,6 +862,9 @@ function ProductForm({
   const [tags, setTags] = useState(
     (product?.tags?.length ? product.tags : [product?.category ?? "mice"]).join(", "),
   );
+  const [specs, setSpecs] = useState<{ label: string; value: string }[]>(
+    product?.specs ?? [],
+  );
   const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -895,7 +898,9 @@ function ProductForm({
       ),
       shortDesc: desc || "Gaming accessory",
       shortDescAr: descAr || undefined,
-      specs: product?.specs ?? [],
+      specs: specs
+        .map((s) => ({ label: s.label.trim(), value: s.value.trim() }))
+        .filter((s) => s.label && s.value),
       stock: Number(stock),
       tags: normalizedTags.length ? normalizedTags : [category],
       badge: badge.trim() || undefined,
@@ -1074,6 +1079,75 @@ function ProductForm({
             className="admin-input !h-20 resize-none"
           />
         </Field>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-border/60 bg-background/40 p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-bold">
+            {isAr ? "المواصفات الفنية" : "Technical Specifications"}
+          </h4>
+          <button
+            type="button"
+            onClick={() => setSpecs((prev) => [...prev, { label: "", value: "" }])}
+            className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[11px] font-semibold transition hover:bg-secondary"
+          >
+            <Plus className="h-3 w-3" /> {isAr ? "إضافة مواصفة" : "Add Spec"}
+          </button>
+        </div>
+        {specs.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            {isAr ? "لا توجد مواصفات. اضغط \"إضافة مواصفة\" للبدء." : "No specs yet. Click \"Add Spec\" to start."}
+          </p>
+        )}
+        <div className="space-y-2">
+          {specs.map((spec, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input
+                value={spec.label}
+                onChange={(e) => {
+                  const label = e.target.value;
+                  setSpecs((prev) => prev.map((s, i) => (i === idx ? { ...s, label } : s)));
+                }}
+                placeholder={isAr ? "المواصفة (مثال: المعالج)" : "Label (e.g. Sensor)"}
+                className="admin-input flex-1"
+              />
+              <input
+                value={spec.value}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSpecs((prev) => prev.map((s, i) => (i === idx ? { ...s, value } : s)));
+                }}
+                placeholder={isAr ? "القيمة (مثال: 26K DPI)" : "Value (e.g. 26K DPI)"}
+                className="admin-input flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => setSpecs((prev) => prev.filter((_, i) => i !== idx))}
+                className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setSpecs((prev) => [...prev, { label: "", value: "" }])}
+            className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[11px] font-semibold transition hover:bg-secondary"
+          >
+            <Plus className="h-3 w-3" /> {isAr ? "إضافة مواصفة" : "Add Spec"}
+          </button>
+          {specs.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSpecs([])}
+              className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-2.5 text-[11px] font-semibold text-destructive transition hover:bg-destructive/20"
+            >
+              <Trash2 className="h-3 w-3" /> {isAr ? "مسح الكل" : "Clear All"}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
