@@ -81,6 +81,43 @@ function CheckoutPage() {
   const clear = useCart((s) => s.clear);
   const nav = useNavigate();
 
+  const [insufficientStockIds, setInsufficientStockIds] = useState<Set<string>>(new Set());
+  const [itemStockMap, setItemStockMap] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    if (lines.length === 0) {
+      setInsufficientStockIds(new Set());
+      return;
+    }
+    getProducts()
+      .then((products) => {
+        if (cancelled) return;
+        const invalidSet = new Set<string>();
+        const stockMap: Record<string, number> = {};
+        for (const line of lines) {
+          const product = products.find((p) => p.id === line.id);
+          const available = product ? product.stock : 0;
+          stockMap[line.id] = available;
+          if (available < line.qty) {
+            invalidSet.add(line.id);
+            toast.error(
+              lang === "ar"
+                ? `المنتج ${line.name} الكمية المتاحة منه ${available} فقط.`
+                : `Item "${line.name}" requested (${line.qty}) exceeds available stock (${available}).`,
+            );
+          }
+        }
+        setInsufficientStockIds(invalidSet);
+        setItemStockMap(stockMap);
+      })
+      .catch((err) => console.error("Failed to check stock", err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lines, lang]);
+
   const subtotal = cartSubtotal(lines);
   const freeThreshold = settings.freeShippingThresholdEGP;
   const shipping = subtotal >= freeThreshold || subtotal === 0 ? 0 : settings.defaultShippingFeeEGP;
@@ -418,6 +455,13 @@ function CheckoutPage() {
                 <div className="min-w-0 flex-1">
                   <div className="line-clamp-1 font-medium text-xs">{l.name}</div>
                   <div className="text-xs text-muted-foreground">{formatEGP(l.price, lang)}</div>
+                  {insufficientStockIds.has(l.id) && (
+                    <div className="text-[10px] font-bold text-destructive">
+                      {lang === "ar"
+                        ? `الكمية المتاحة ${itemStockMap[l.id] ?? 0} فقط`
+                        : `Only ${itemStockMap[l.id] ?? 0} left`}
+                    </div>
+                  )}
                 </div>
                 <div className="text-sm font-semibold font-display">{formatEGP(l.price * l.qty, lang)}</div>
               </li>
@@ -442,7 +486,7 @@ function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || insufficientStockIds.size > 0}
             className="w-full inline-flex h-12 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-70 shadow-lg"
           >
             {submitting ? "Processing Order…" : `${t.checkout.placeOrder} · ${formatEGP(total, lang)}`}

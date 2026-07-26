@@ -50,6 +50,7 @@ import { type Product, CATEGORIES, type Category } from "@/data/products";
 import { formatEGP } from "@/lib/currency";
 import { toast } from "sonner";
 import { mergeCategories } from "@/services/catalogService";
+import { useLang } from "@/store/lang";
 
 /* ─────────────────────────────────────── Types ─────────────────────── */
 type AdminTab = "orders" | "products" | "categories" | "analytics" | "customers" | "settings";
@@ -79,6 +80,8 @@ import { clearAdminOrders, getAdminOrders, updateAdminOrderStatus } from "@/lib/
 
 
 function AdminPage() {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [passkey, setPasskey] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -105,12 +108,12 @@ function AdminPage() {
       if (res.ok) {
         setAuthenticated(true);
         setPasskey("");
-        toast.success("Welcome back, Admin! 🎮");
+        toast.success(isAr ? "مرحباً بك يا أدمن! 🎮" : "Welcome back, Admin! 🎮");
       } else {
-        toast.error("Invalid passkey.");
+        toast.error(isAr ? "كلمة المرور غير صحيحة." : "Invalid passkey.");
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
+      toast.error(err instanceof Error ? err.message : isAr ? "فشل تسجيل الدخول. حاول مرة أخرى." : "Sign-in failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -127,32 +130,34 @@ function AdminPage() {
   if (authenticated === null) {
     return (
       <div className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-4 py-16 text-center text-sm text-muted-foreground">
-        Checking session…
+        {isAr ? "جاري التحقق من الجلسة..." : "Checking session…"}
       </div>
     );
   }
 
   if (!authenticated) {
     return (
-      <div className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-4 py-16">
+      <div dir={isAr ? "rtl" : "ltr"} className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-4 py-16">
         <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-2xl text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-2 ring-primary/20">
             <Lock className="h-8 w-8" />
           </div>
-          <h1 className="font-display text-2xl font-bold tracking-tight">Admin Portal</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">
+            {isAr ? "لوحة التحكم" : "Admin Portal"}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Enter your passkey to access the Badzy management console.
+            {isAr ? "أدخل كلمة المرور للوصول إلى لوحة تحكم بادزي." : "Enter your passkey to access the Badzy management console."}
           </p>
-          <form onSubmit={handleLogin} className="mt-8 space-y-4 text-left">
+          <form onSubmit={handleLogin} className="mt-8 space-y-4 text-left" dir={isAr ? "rtl" : "ltr"}>
             <div className="relative">
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Passkey
+                {isAr ? "كلمة المرور" : "Passkey"}
               </label>
               <input
                 type={showPass ? "text" : "password"}
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
-                placeholder="Enter admin passkey"
+                placeholder={isAr ? "أدخل كلمة المرور" : "Enter admin passkey"}
                 autoComplete="current-password"
                 className="h-11 w-full rounded-xl border border-border bg-background px-4 pr-11 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 required
@@ -160,7 +165,7 @@ function AdminPage() {
               <button
                 type="button"
                 onClick={() => setShowPass((p) => !p)}
-                className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
+                className={`absolute top-8 text-muted-foreground hover:text-foreground ${isAr ? "left-3" : "right-3"}`}
               >
                 <Eye className="h-4 w-4" />
               </button>
@@ -170,7 +175,7 @@ function AdminPage() {
               disabled={submitting}
               className="h-11 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground transition hover:brightness-110 active:scale-95 disabled:opacity-60"
             >
-              {submitting ? "Signing in…" : "Sign In →"}
+              {submitting ? (isAr ? "جاري الدخول..." : "Signing in…") : (isAr ? "دخول" : "Sign In →")}
             </button>
           </form>
         </div>
@@ -183,6 +188,8 @@ function AdminPage() {
 
 /* ─────────────────────────────────────── Dashboard ─────────────────── */
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+  const { lang, toggleLang } = useLang();
+  const isAr = lang === "ar";
   const [activeTab, setActiveTab] = useState<AdminTab>("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -200,7 +207,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     setLoading(false);
   }, [fetchOrders]);
 
-
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -215,24 +221,24 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const tabs: { id: AdminTab; label: string; icon: React.ReactNode; count?: number }[] = [
     {
       id: "orders",
-      label: "Orders",
+      label: isAr ? "الطلبات" : "Orders",
       icon: <ShoppingBag className="h-4 w-4" />,
       count: orders.length,
     },
     {
       id: "products",
-      label: "Products",
+      label: isAr ? "المنتجات" : "Products",
       icon: <Package className="h-4 w-4" />,
       count: products.length,
     },
-    { id: "categories", label: "Categories", icon: <Tag className="h-4 w-4" /> },
-    { id: "analytics", label: "Analytics", icon: <BarChart2 className="h-4 w-4" /> },
-    { id: "customers", label: "Customers", icon: <Users className="h-4 w-4" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
+    { id: "categories", label: isAr ? "الفئات" : "Categories", icon: <Tag className="h-4 w-4" /> },
+    { id: "analytics", label: isAr ? "التحليلات" : "Analytics", icon: <BarChart2 className="h-4 w-4" /> },
+    { id: "customers", label: isAr ? "العملاء" : "Customers", icon: <Users className="h-4 w-4" /> },
+    { id: "settings", label: isAr ? "الإعدادات" : "Settings", icon: <Settings className="h-4 w-4" /> },
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div dir={isAr ? "rtl" : "ltr"} className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-5">
         <div>
@@ -242,22 +248,28 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
             <div>
               <h1 className="font-display text-2xl font-bold tracking-tight">Badzy Admin</h1>
-              <p className="text-xs text-muted-foreground">Management Console</p>
+              <p className="text-xs text-muted-foreground">{isAr ? "لوحة التحكم والإدارة" : "Management Console"}</p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={toggleLang}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-secondary"
+          >
+            {isAr ? "English" : "العربية"}
+          </button>
+          <button
             onClick={loadData}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-secondary"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> {isAr ? "تحديث" : "Refresh"}
           </button>
           <button
             onClick={onLogout}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 text-xs font-semibold text-destructive transition hover:bg-destructive/20"
           >
-            <LogOut className="h-3.5 w-3.5" /> Logout
+            <LogOut className="h-3.5 w-3.5" /> {isAr ? "تسجيل الخروج" : "Logout"}
           </button>
         </div>
       </div>
@@ -266,30 +278,30 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
-          label="Total Revenue"
+          label={isAr ? "إجمالي الإيرادات" : "Total Revenue"}
           value={formatEGP(totalRevenue)}
-          sub={`${orders.length} orders`}
+          sub={isAr ? `${orders.length} طلبات` : `${orders.length} orders`}
           color="emerald"
         />
         <StatCard
           icon={<ShoppingBag className="h-5 w-5 text-primary" />}
-          label="Pending Action"
+          label={isAr ? "في الانتظار" : "Pending Action"}
           value={String(pendingCount)}
-          sub="Needs attention"
+          sub={isAr ? "تحتاج اهتمام" : "Needs attention"}
           color="red"
         />
         <StatCard
           icon={<CheckCircle className="h-5 w-5 text-sky-400" />}
-          label="Delivered"
+          label={isAr ? "تم التسليم" : "Delivered"}
           value={String(deliveredCount)}
-          sub="Completed orders"
+          sub={isAr ? "طلبات مكتملة" : "Completed orders"}
           color="sky"
         />
         <StatCard
           icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
-          label="Low Stock"
+          label={isAr ? "مخزون منخفض" : "Low Stock"}
           value={String(lowStockCount)}
-          sub="Under 5 units"
+          sub={isAr ? "أقل من 5 قطع" : "Under 5 units"}
           color="amber"
         />
       </div>
@@ -370,6 +382,8 @@ function StatCard({
 
 /* ─────────────────────────────────────── Orders Tab ────────────────── */
 function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => void }) {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [clearingOrders, setClearingOrders] = useState(false);
@@ -423,21 +437,23 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
     a.download = "badzy-orders.csv";
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Orders exported as CSV!");
+    toast.success(isAr ? "تم تصدير الطلبات كملف CSV!" : "Orders exported as CSV!");
   };
 
   const handleClearOrders = async () => {
     if (orders.length === 0 || clearingOrders) return;
 
     const confirmed = window.confirm(
-      `This will permanently delete ${orders.length} order${orders.length === 1 ? "" : "s"} from Supabase. Continue?`,
+      isAr
+        ? `سيتم حذف ${orders.length} طلب نهائياً من قاعدة البيانات. هل تريد الاستمرار؟`
+        : `This will permanently delete ${orders.length} order${orders.length === 1 ? "" : "s"} from Supabase. Continue?`,
     );
     if (!confirmed) return;
 
     setClearingOrders(true);
     try {
       const result = await clearOrders();
-      toast.success(`Deleted ${result.deletedCount} order${result.deletedCount === 1 ? "" : "s"}.`);
+      toast.success(isAr ? `تم حذف ${result.deletedCount} طلب.` : `Deleted ${result.deletedCount} order${result.deletedCount === 1 ? "" : "s"}.`);
       setFilter("all");
       setSearch("");
       onRefresh();
@@ -456,12 +472,12 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground ${isAr ? "right-3" : "left-3"}`} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name / phone..."
-              className="h-9 rounded-lg border border-border bg-background pl-9 pr-3 text-xs outline-none focus:border-primary"
+              placeholder={isAr ? "البحث بالاسم / الهاتف / رقم الطلب..." : "Search name / phone..."}
+              className={`h-9 rounded-lg border border-border bg-background text-xs outline-none focus:border-primary ${isAr ? "pr-9 pl-3" : "pl-9 pr-3"}`}
             />
           </div>
           {/* Filter */}
@@ -470,36 +486,36 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
             onChange={(e) => setFilter(e.target.value)}
             className="h-9 rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-primary"
           >
-            <option value="all">All Orders</option>
-            <option value="placed">Status: Placed</option>
-            <option value="confirmed">Status: Confirmed</option>
-            <option value="shipped">Status: Shipped</option>
-            <option value="delivered">Status: Delivered</option>
-            <option value="cancelled">Status: Cancelled</option>
-            <option value="pending">Payment: Pending</option>
-            <option value="cod">Payment: COD</option>
+            <option value="all">{isAr ? "جميع الطلبات" : "All Orders"}</option>
+            <option value="placed">{isAr ? "الحالة: تم الطلب" : "Status: Placed"}</option>
+            <option value="confirmed">{isAr ? "الحالة: تم التأكيد" : "Status: Confirmed"}</option>
+            <option value="shipped">{isAr ? "الحالة: تم الشحن" : "Status: Shipped"}</option>
+            <option value="delivered">{isAr ? "الحالة: تم التسليم" : "Status: Delivered"}</option>
+            <option value="cancelled">{isAr ? "الحالة: ملغي" : "Status: Cancelled"}</option>
+            <option value="pending">{isAr ? "الدفع: معلق" : "Payment: Pending"}</option>
+            <option value="cod">{isAr ? "الدفع: عند الاستلام" : "Payment: COD"}</option>
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{filtered.length} orders</span>
+          <span className="text-xs text-muted-foreground">{isAr ? `${filtered.length} طلبات` : `${filtered.length} orders`}</span>
           <button
             onClick={exportCSV}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-semibold transition hover:bg-secondary"
           >
-            <Download className="h-3.5 w-3.5" /> Export CSV
+            <Download className="h-3.5 w-3.5" /> {isAr ? "تصدير CSV" : "Export CSV"}
           </button>
           <button
             onClick={handleClearOrders}
             disabled={orders.length === 0 || clearingOrders}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 text-xs font-semibold text-destructive transition hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Trash2 className="h-3.5 w-3.5" /> {clearingOrders ? "Clearing..." : "Clear Orders"}
+            <Trash2 className="h-3.5 w-3.5" /> {clearingOrders ? (isAr ? "جاري الحذف..." : "Clearing...") : (isAr ? "حذف الطلبات" : "Clear Orders")}
           </button>
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState message="No orders match the current filter." />
+        <EmptyState message={isAr ? "لا توجد طلبات تطابق الفلتر الحالي." : "No orders match the current filter."} />
       ) : (
         <div className="space-y-3">
           {filtered.map((o) => (
@@ -512,9 +528,18 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
 }
 
 function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => void }) {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
   const [expanded, setExpanded] = useState(false);
   const setOrderStatus = useServerFn(updateAdminOrderStatus);
 
+  const orderStatusLabels: Record<string, string> = {
+    placed: isAr ? "تم الطلب" : "placed",
+    confirmed: isAr ? "تم التأكيد" : "confirmed",
+    shipped: isAr ? "تم الشحن" : "shipped",
+    delivered: isAr ? "تم التسليم" : "delivered",
+    cancelled: isAr ? "ملغي" : "cancelled",
+  };
 
   const statusColors: Record<string, string> = {
     placed: "bg-blue-500/10 text-blue-400 border-blue-500/30",
@@ -538,7 +563,7 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
               <span
                 className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${statusColors[o.orderStatus] ?? ""}`}
               >
-                {o.orderStatus}
+                {orderStatusLabels[o.orderStatus] || o.orderStatus}
               </span>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -578,11 +603,11 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
               }}
               className="h-8 rounded-lg border border-primary/40 bg-primary/10 px-2 text-xs font-semibold text-primary outline-none"
             >
-              <option value="placed">Placed</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="placed">{isAr ? "تم الطلب" : "Placed"}</option>
+              <option value="confirmed">{isAr ? "تم التأكيد" : "Confirmed"}</option>
+              <option value="shipped">{isAr ? "تم الشحن" : "Shipped"}</option>
+              <option value="delivered">{isAr ? "تم التسليم" : "Delivered"}</option>
+              <option value="cancelled">{isAr ? "ملغي" : "Cancelled"}</option>
             </select>
             <select
               value={o.paymentStatus}
@@ -601,11 +626,11 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
               }}
               className="h-8 rounded-lg border border-border bg-background px-2 text-xs font-semibold outline-none"
             >
-              <option value="cod">COD</option>
-              <option value="pending">Pending Verification</option>
-              <option value="verified">Verified</option>
-              <option value="paid">Paid</option>
-              <option value="failed">Failed</option>
+              <option value="pending">{isAr ? "معلق" : "Pending"}</option>
+              <option value="verified">{isAr ? "تم التحقق" : "Verified"}</option>
+              <option value="paid">{isAr ? "مدفوع" : "Paid"}</option>
+              <option value="failed">{isAr ? "فشل" : "Failed"}</option>
+              <option value="cod">{isAr ? "دفع عند الاستلام" : "COD"}</option>
             </select>
             {o.paymentReference && (
               <span className="flex h-8 items-center rounded-lg bg-primary/10 px-2 font-mono text-[11px] text-primary">
@@ -657,6 +682,8 @@ function ProductsTab({
   settings: StoreSettings;
   onRefresh: () => void;
 }) {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [search, setSearch] = useState("");
@@ -673,12 +700,12 @@ function ProductsTab({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground ${isAr ? "right-3" : "left-3"}`} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
-            className="h-9 rounded-lg border border-border bg-background pl-9 pr-3 text-xs outline-none focus:border-primary"
+            placeholder={isAr ? "البحث عن منتج..." : "Search products..."}
+            className={`h-9 rounded-lg border border-border bg-background text-xs outline-none focus:border-primary ${isAr ? "pr-9 pl-3" : "pl-9 pr-3"}`}
           />
         </div>
         <button
@@ -688,7 +715,7 @@ function ProductsTab({
           }}
           className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110"
         >
-          <Plus className="h-3.5 w-3.5" /> Add Product
+          <Plus className="h-3.5 w-3.5" /> {isAr ? "إضافة منتج" : "Add Product"}
         </button>
       </div>
 
@@ -815,6 +842,8 @@ function ProductForm({
   onSaved: () => void;
   onCancel: () => void;
 }) {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
   const allCategories = mergeCategories(settings);
   const [name, setName] = useState(product?.name ?? "");
   const [nameAr, setNameAr] = useState(product?.nameAr ?? "");
@@ -892,7 +921,7 @@ function ProductForm({
     >
       <div className="flex items-center justify-between">
         <h3 className="font-display text-lg font-bold">
-          {product ? "Edit Product" : "New Product"}
+          {product ? (isAr ? "تعديل منتج" : "Edit Product") : (isAr ? "منتج جديد" : "New Product")}
         </h3>
         <button
           type="button"
@@ -1093,14 +1122,14 @@ function ProductForm({
           type="submit"
           className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110"
         >
-          <Save className="h-3.5 w-3.5" /> {product ? "Save Changes" : "Add Product"}
+          <Save className="h-3.5 w-3.5" /> {product ? (isAr ? "حفظ التغييرات" : "Save Changes") : (isAr ? "إضافة منتج" : "Add Product")}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="h-9 rounded-lg border border-border px-4 text-xs font-semibold transition hover:bg-secondary"
         >
-          Cancel
+          {isAr ? "إلغاء" : "Cancel"}
         </button>
       </div>
     </form>
@@ -1561,6 +1590,8 @@ function SettingsTab({
   settings: StoreSettings;
   setSettings: (s: StoreSettings) => void;
 }) {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const saveSettings = useServerFn(saveAdminStoreSettings);
@@ -1618,14 +1649,14 @@ function SettingsTab({
         className="rounded-xl border border-border/60 bg-card p-6 space-y-5"
       >
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-display text-lg font-bold">Store Configuration</h3>
+          <h3 className="font-display text-lg font-bold">{isAr ? "إعدادات المتجر" : "Store Configuration"}</h3>
           {loadingSettings && (
-            <span className="text-xs text-muted-foreground">Loading live settings…</span>
+            <span className="text-xs text-muted-foreground">{isAr ? "جاري تحميل الإعدادات المباشرة…" : "Loading live settings…"}</span>
           )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Free Shipping Threshold (EGP)">
+          <Field label={isAr ? "حد الشحن المجاني (جنيه)" : "Free Shipping Threshold (EGP)"}>
             <input
               type="number"
               value={settings.freeShippingThresholdEGP}
@@ -1635,7 +1666,7 @@ function SettingsTab({
               className="admin-input"
             />
           </Field>
-          <Field label="Default Shipping Fee (EGP)">
+          <Field label={isAr ? "رسوم الشحن الافتراضية (جنيه)" : "Default Shipping Fee (EGP)"}>
             <input
               type="number"
               value={settings.defaultShippingFeeEGP}
@@ -1648,7 +1679,7 @@ function SettingsTab({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Low Stock Threshold">
+          <Field label={isAr ? "حد المخزون المنخفض" : "Low Stock Threshold"}>
             <input
               type="number"
               min={1}
@@ -1659,15 +1690,15 @@ function SettingsTab({
               className="admin-input"
             />
           </Field>
-          <Field label="Announcement Visibility">
+          <Field label={isAr ? "رؤية الإعلان" : "Announcement Visibility"}>
             <div className="rounded-xl border border-border/60 bg-background px-3 py-2 text-xs text-muted-foreground">
-              Enable the top banner to show shipping or promo messaging across the site.
+              {isAr ? "تفعيل الشريط العلوي لعرض رسائل الشحن أو العروض في كل الموقع." : "Enable the top banner to show shipping or promo messaging across the site."}
             </div>
           </Field>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="WhatsApp Number (+20...)">
+          <Field label={isAr ? "رقم واتساب (+20...)" : "WhatsApp Number (+20...)"}>
             <input
               type="text"
               value={settings.whatsappNumber}
@@ -1675,7 +1706,7 @@ function SettingsTab({
               className="admin-input"
             />
           </Field>
-          <Field label="InstaPay Handle">
+          <Field label={isAr ? "معرف إنستاباي" : "InstaPay Handle"}>
             <input
               type="text"
               value={settings.instapayHandle}
@@ -1683,7 +1714,7 @@ function SettingsTab({
               className="admin-input"
             />
           </Field>
-          <Field label="Support Email">
+          <Field label={isAr ? "البريد الإلكتروني للدعم" : "Support Email"}>
             <input
               type="email"
               value={settings.supportEmail}
@@ -1997,7 +2028,7 @@ function SettingsTab({
           disabled={savingSettings}
           className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
         >
-          <Save className="h-4 w-4" /> {savingSettings ? "Saving…" : "Save Settings"}
+          <Save className="h-4 w-4" /> {savingSettings ? (isAr ? "جاري الحفظ…" : "Saving…") : (isAr ? "حفظ الإعدادات" : "Save Settings")}
         </button>
       </form>
     </div>

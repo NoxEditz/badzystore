@@ -65,7 +65,7 @@ export function Footer() {
 
       {/* Main Footer Links */}
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="space-y-4">
             <Logo />
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -131,21 +131,7 @@ export function Footer() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wider text-foreground">
-              Admin & System
-            </h3>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <Link to="/admin" className="text-primary hover:underline font-semibold">
-                  {t.nav.admin} Portal
-                </Link>
-              </li>
-              <li className="text-muted-foreground pt-2">
-                Starting in Alexandria & Shipping Nationwide, Egypt.
-              </li>
-            </ul>
-          </div>
+
         </div>
 
         <div className="mt-12 border-t border-border/40 pt-6 flex flex-wrap items-center justify-between text-xs text-muted-foreground">

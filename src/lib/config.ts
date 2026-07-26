@@ -11,13 +11,7 @@ export const CONFIG = {
   freeShippingThresholdEGP: Number(import.meta.env.VITE_FREE_SHIPPING_THRESHOLD) || 2500,
   defaultShippingFeeEGP: Number(import.meta.env.VITE_DEFAULT_SHIPPING_FEE) || 50,
 
-  // Payment Gateways (public keys only)
-  paymobPublicKey: import.meta.env.VITE_PAYMOB_PUBLIC_KEY || "",
-  stripePublicKey: import.meta.env.VITE_STRIPE_PUBLIC_KEY || "",
 
-  // Shipping Courier APIs (public identifiers only)
-  bostaApiKey: import.meta.env.VITE_BOSTA_API_KEY || "",
-  mylerzApiKey: import.meta.env.VITE_MYLERZ_API_KEY || "",
 
   // Analytics Pixels
   gaMeasurementId: import.meta.env.VITE_GA_MEASUREMENT_ID || "",

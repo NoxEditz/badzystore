@@ -68,7 +68,7 @@ This project is optimized for **Cloudflare Pages**.
 
 1. Connect your repository to Cloudflare Pages.
 2. Set the build command to `npm run build`.
-3. Set the output directory to `dist` (or `.output/public` based on TanStack Start output configuration).
+3. Set the build output directory to `.output/public`.
 4. Add the required environment variables in the Cloudflare Pages settings.
 
 ## Admin Dashboard

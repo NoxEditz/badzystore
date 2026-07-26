@@ -17,33 +17,34 @@ export const Route = createFileRoute("/faq")({
 function FaqPage() {
   const { lang } = useLang();
   const t = DICTIONARY[lang];
+  const isAr = lang === "ar";
 
   const faqs = [
     {
-      q: lang === "ar" ? "ما هي طرق الدفع المتاحة لدى بادزي ستور؟" : "What payment methods are available?",
+      q: isAr ? "ما هي طرق الدفع المتاحة لدى بادزي ستور؟" : "What payment methods are available?",
       a:
-        lang === "ar"
+        isAr
           ? "نوفر طريقة الدفع عند الاستلام (COD) كخيار رئيسي وافتراضي لكل المحافظات، بالإضافة إلى الدفع والتحويل البنكي عبر إنستاباي (InstaPay)."
           : "We offer Cash on Delivery (COD) as our primary method across Egypt, as well as Bank Transfers via InstaPay.",
     },
     {
-      q: lang === "ar" ? "كم تستغرق مدة التوصيل داخل مصر؟" : "How long does shipping take in Egypt?",
+      q: isAr ? "كم تستغرق مدة التوصيل داخل مصر؟" : "How long does shipping take in Egypt?",
       a:
-        lang === "ar"
+        isAr
           ? "التوصيل يستغرق 1–2 يوم عمل في الإسكندرية والقاهرة والجيزة، ومن 3–5 أيام عمل لباقي المحافظات."
           : "Delivery takes 1–2 business days for Alexandria, Cairo & Giza, and 3–5 business days for all other governorates.",
     },
     {
-      q: lang === "ar" ? "هل المنتجات مشمولة بضمان رسمي؟" : "Are products covered under warranty?",
+      q: isAr ? "هل المنتجات مشمولة بضمان رسمي؟" : "Are products covered under warranty?",
       a:
-        lang === "ar"
+        isAr
           ? "نعم، جميع منتجات بادزي ستور تأتي بضمان لمدة عام كامل ضد عيوب التصنيع."
           : "Yes, every product from Badzy Store comes with a 1-Year limited warranty against manufacturing defects.",
     },
     {
-      q: lang === "ar" ? "كيف يمكنني استرجاع أو استبدال منتج؟" : "How can I return or exchange a product?",
+      q: isAr ? "كيف يمكنني استرجاع أو استبدال منتج؟" : "How can I return or exchange a product?",
       a:
-        lang === "ar"
+        isAr
           ? "يمكنك الاسترجاع أو الاستبدال خلال 14 يوماً من استلام الشحنة بشرط أن يكون المنتج بحالته الأصلية وغلافه. تواصل معنا عبر واتساب لبدء الطلب."
           : "You can return or exchange any unopen/original condition product within 14 days of receipt. Contact support on WhatsApp to initiate.",
     },
@@ -56,7 +57,9 @@ function FaqPage() {
           <HelpCircle className="h-7 w-7" />
         </div>
         <h1 className="font-display text-3xl font-bold sm:text-4xl">{t.nav.faq}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Everything you need to know about shopping with us.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {isAr ? "كل ما تحتاج معرفته عن التسوق معنا." : "Everything you need to know about shopping with us."}
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -69,9 +72,13 @@ function FaqPage() {
       </div>
 
       <div className="mt-12 rounded-xl border border-primary/40 bg-primary/10 p-8 text-center space-y-4">
-        <h3 className="font-display text-xl font-bold text-foreground">Still have questions?</h3>
+        <h3 className="font-display text-xl font-bold text-foreground">
+          {isAr ? "هل ما زال لديك أسئلة؟" : "Still have questions?"}
+        </h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Our team is available 24/7 on WhatsApp to help you choose the best gaming gear.
+          {isAr
+            ? "فريقنا متواجد على مدار الساعة عبر واتساب لمساعدتك في اختيار أفضل معدات القيمنق."
+            : "Our team is available 24/7 on WhatsApp to help you choose the best gaming gear."}
         </p>
         <OrderWhatsAppLink className="h-11 px-6" />
       </div>
