@@ -3,7 +3,12 @@ import { useEffect, useState } from "react";
 import { CreditCard, Lock, Smartphone, Banknote, ShieldCheck, CheckCircle2, QrCode } from "lucide-react";
 import { useCart, cartSubtotal } from "@/store/cart";
 import { createOrder } from "@/services/orderService";
-import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
+import {
+  fetchStoreSettings,
+  getStoreSettings,
+  subscribeToStoreSettings,
+  type StoreSettings,
+} from "@/services/settingsService";
 import { getPaymentProvider } from "@/services/paymentService";
 import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
@@ -67,6 +72,8 @@ function CheckoutPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => subscribeToStoreSettings(setSettings), []);
 
   const lines = useCart((s) => s.lines);
   const clear = useCart((s) => s.clear);

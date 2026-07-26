@@ -71,6 +71,9 @@ import {
   adminSignIn,
   adminSignOut,
   getAdminStatus,
+  saveAdminProduct,
+  updateAdminProductStock,
+  deleteAdminProduct,
   saveAdminStoreSettings,
 } from "@/lib/admin.functions";
 
@@ -820,7 +823,7 @@ function ProductForm({
       badgeStyle: badge.trim() ? badgeStyle : undefined,
     };
     try {
-      await saveProduct(p);
+      await saveAdminProduct({ data: { product: p } });
       toast.success(product ? "Product updated!" : "Product added!");
       onSaved();
     } catch (error) {
@@ -1022,6 +1025,7 @@ function CategoriesTab({
   const [image, setImage] = useState("");
   const [visible, setVisible] = useState(true);
   const [sortOrder, setSortOrder] = useState(0);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const saveSettings = useServerFn(saveAdminStoreSettings);
 
@@ -1031,6 +1035,7 @@ function CategoriesTab({
     try {
       const res = await saveSettings({ data: { settings: nextSettings } });
       updateStoreSettings(res.settings);
+      window.dispatchEvent(new CustomEvent("badzy:store-settings-updated", { detail: res.settings }));
       setSettings(res.settings);
       toast.success("Categories saved to Supabase!");
     } catch (error) {
@@ -1061,6 +1066,33 @@ function CategoriesTab({
     await persistCategories(updated);
     setLabel("");
     setLabelAr("");
+    setEmoji("");
+    setImage("");
+    setVisible(true);
+    setSortOrder(0);
+    setEditingId(null);
+  };
+
+  const editCategory = (category: StoreSettings["customCategories"][number]) => {
+    setEditingId(category.id);
+    setLabel(category.label);
+    setLabelAr(category.labelAr);
+    setEmoji(category.emoji ?? "");
+    setImage(category.image ?? "");
+    setVisible(category.visible !== false);
+    setSortOrder(category.sortOrder ?? 0);
+  };
+
+  const editBuiltIn = (category: (typeof builtIn)[number]) => {
+    editCategory({
+      id: category.id,
+      label: category.label,
+      labelAr: category.labelAr,
+      emoji: category.emoji,
+      image: category.image,
+      visible: category.visible,
+      sortOrder: category.sortOrder,
+    });
   };
 
   const deleteCustom = async (id: string) => {
@@ -1078,14 +1110,18 @@ function CategoriesTab({
               key={c.id}
               className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-3"
             >
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-semibold">{c.label}</p>
                 <p className="text-xs text-muted-foreground">{c.labelAr}</p>
-            {c.emoji && <p className="text-xs">{c.emoji}</p>}
+                {c.emoji && <p className="text-xs">{c.emoji}</p>}
               </div>
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground uppercase">
-                {c.id}
-              </span>
+              <button
+                type="button"
+                onClick={() => editBuiltIn(c)}
+                className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase text-primary transition hover:bg-primary/20"
+              >
+                Edit
+              </button>
             </div>
           ))}
         </div>
@@ -1156,13 +1192,32 @@ function CategoriesTab({
               <input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} /> Visible in storefront
             </label>
           </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
-          >
-            <Plus className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Add Category"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
+            >
+              <Plus className="h-3.5 w-3.5" /> {saving ? "Saving…" : editingId ? "Update Category" : "Add Category"}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  setLabel("");
+                  setLabelAr("");
+                  setEmoji("");
+                  setImage("");
+                  setVisible(true);
+                  setSortOrder(0);
+                }}
+                className="h-9 rounded-lg border border-border px-4 text-xs font-semibold transition hover:bg-secondary"
+              >
+                Cancel Edit
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </div>
@@ -1448,6 +1503,7 @@ function SettingsTab({
     try {
       const res = await saveSettings({ data: { settings } });
       updateStoreSettings(res.settings);
+      window.dispatchEvent(new CustomEvent("badzy:store-settings-updated", { detail: res.settings }));
       toast.success("Settings saved to Supabase!");
     } catch (error) {
       console.error("Failed to save store settings", error);

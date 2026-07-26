@@ -45,15 +45,6 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const CATEGORY_ICONS: Record<string, string> = {
-  mice: "🖱️",
-  keyboards: "⌨️",
-  headsets: "🎧",
-  rgb: "💡",
-  streaming: "🎙️",
-  seating: "🪑",
-};
-
 function HeroLogo() {
   return (
     <picture>
@@ -240,7 +231,12 @@ function Home() {
                 className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/60 bg-card p-4 aspect-square transition-all duration-300 hover:-translate-y-1.5 hover:border-primary hover:bg-card/80 hover:shadow-[0_15px_40px_-20px_oklch(0.58_0.22_25_/_0.7)]"
               >
                 <span aria-hidden className="shine-sweep-bar" />
-                <div className="text-3xl select-none">{CATEGORY_ICONS[c.id] ?? "🎮"}</div>
+                <div className="text-3xl select-none">{c.emoji ?? "🎮"}</div>
+                {c.image ? (
+                  <div className="absolute inset-0 opacity-15">
+                    <img src={c.image} alt="" className="h-full w-full object-cover" />
+                  </div>
+                ) : null}
                 <div className="relative mt-auto">
                   <div className="font-display text-sm font-bold leading-tight transition-transform duration-300 group-hover:-translate-y-0.5">
                     {lang === "ar" ? c.labelAr : c.label}

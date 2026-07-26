@@ -1,5 +1,10 @@
 import { MessageCircle } from "lucide-react";
-import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
+import {
+  fetchStoreSettings,
+  getStoreSettings,
+  subscribeToStoreSettings,
+  type StoreSettings,
+} from "@/services/settingsService";
 import { useLang } from "@/store/lang";
 import { useEffect, useState } from "react";
 
@@ -19,6 +24,8 @@ export function WhatsAppButton({ productName }: { productName?: string }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => subscribeToStoreSettings(setSettings), []);
 
   const rawNumber = settings.whatsappNumber.replace(/[^0-9]/g, "");
 

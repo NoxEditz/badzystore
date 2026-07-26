@@ -99,6 +99,7 @@ function Shop() {
                 : "border-border text-muted-foreground hover:border-primary hover:text-primary"
             }`}
           >
+            <span className="mr-1 rtl:ml-1 rtl:mr-0">{c.emoji ?? ""}</span>
             {lang === "ar" ? c.labelAr : c.label}
           </Link>
         ))}

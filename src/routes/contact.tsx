@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MessageCircle, Phone, MapPin, Mail } from "lucide-react";
 import { OrderWhatsAppLink } from "@/components/site/OrderWhatsAppLink";
-import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
+import {
+  fetchStoreSettings,
+  getStoreSettings,
+  subscribeToStoreSettings,
+  type StoreSettings,
+} from "@/services/settingsService";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/contact")({
@@ -29,6 +34,8 @@ function ContactPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => subscribeToStoreSettings(setSettings), []);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">

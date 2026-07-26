@@ -12,13 +12,24 @@ export type CatalogCategory = StoreCategory & { id: Category };
 export function mergeCategories(
   settings: Pick<StoreSettings, "customCategories"> = getStoreSettings(),
 ): CatalogCategory[] {
-  const seen = new Set<string>();
-  return [...CATEGORIES, ...settings.customCategories]
-    .filter((category) => {
-      if (seen.has(category.id) || category.visible === false) return false;
-      seen.add(category.id);
-      return true;
-    })
+  const merged = new Map<string, CatalogCategory>();
+
+  for (const category of CATEGORIES) {
+    merged.set(category.id, { ...category });
+  }
+
+  for (const category of settings.customCategories) {
+    const existing = merged.get(category.id);
+    merged.set(category.id, {
+      ...(existing ?? { id: category.id, label: category.label, labelAr: category.labelAr }),
+      ...existing,
+      ...category,
+      id: category.id,
+    });
+  }
+
+  return Array.from(merged.values())
+    .filter((category) => category.visible !== false)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)) as CatalogCategory[];
 }
 

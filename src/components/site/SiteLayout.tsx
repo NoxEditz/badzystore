@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { useEffect, useState } from "react";
-import { fetchStoreSettings, getStoreSettings, type StoreSettings } from "@/services/settingsService";
+import {
+  fetchStoreSettings,
+  getStoreSettings,
+  subscribeToStoreSettings,
+  type StoreSettings,
+} from "@/services/settingsService";
 import { useLang } from "@/store/lang";
 import { X } from "lucide-react";
 
@@ -23,6 +28,8 @@ function AnnouncementBanner() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => subscribeToStoreSettings(setSettings), []);
 
   const enabledItems = settings.announcementItems.filter((item) => item.enabled);
   const fallbackText = lang === "ar" ? settings.announcementTextAr : settings.announcementTextEn;

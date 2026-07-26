@@ -39,6 +39,7 @@ export type StoreCategory = {
 
 const LOCAL_SETTINGS_KEY = "badzy_store_settings";
 const SUPABASE_SETTINGS_KEY = "store_settings";
+const STORE_SETTINGS_EVENT = "badzy:store-settings-updated";
 
 const DEFAULT_STORE_SETTINGS: StoreSettings = {
   freeShippingThresholdEGP: CONFIG.freeShippingThresholdEGP,
@@ -203,6 +204,35 @@ export function updateStoreSettings(newSettings: Partial<StoreSettings>): StoreS
   const updated = normalizeStoreSettings({ ...current, ...newSettings });
   if (typeof window !== "undefined") {
     localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(STORE_SETTINGS_EVENT, { detail: updated }));
   }
   return updated;
+}
+
+export function subscribeToStoreSettings(
+  callback: (settings: StoreSettings) => void,
+): () => void {
+  if (typeof window === "undefined") return () => undefined;
+
+  const handleCustomEvent = (event: Event) => {
+    const detail = (event as CustomEvent<StoreSettings>).detail;
+    if (detail) callback(normalizeStoreSettings(detail));
+  };
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== LOCAL_SETTINGS_KEY || !event.newValue) return;
+    try {
+      callback(normalizeStoreSettings(JSON.parse(event.newValue)));
+    } catch {
+      // Ignore malformed storage payloads.
+    }
+  };
+
+  window.addEventListener(STORE_SETTINGS_EVENT, handleCustomEvent as EventListener);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener(STORE_SETTINGS_EVENT, handleCustomEvent as EventListener);
+    window.removeEventListener("storage", handleStorage);
+  };
 }

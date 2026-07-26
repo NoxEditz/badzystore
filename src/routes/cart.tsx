@@ -4,7 +4,12 @@ import { useCart, cartSubtotal } from "@/store/cart";
 import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
-import { fetchStoreSettings, getStoreSettings } from "@/services/settingsService";
+import {
+  fetchStoreSettings,
+  getStoreSettings,
+  subscribeToStoreSettings,
+  type StoreSettings,
+} from "@/services/settingsService";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/cart")({
@@ -34,6 +39,8 @@ function CartPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => subscribeToStoreSettings(setSettings), []);
 
   const lines = useCart((s) => s.lines);
   const setQty = useCart((s) => s.setQty);
