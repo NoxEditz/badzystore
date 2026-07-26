@@ -3,6 +3,25 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const LOCAL_PRODUCTS_KEY = "badzy_store_products";
 
+type ProductRow = {
+  id: string;
+  slug: string;
+  name: string;
+  name_ar?: string;
+  category: Product["category"];
+  price_egp: number | string;
+  old_price_egp?: number | string | null;
+  rating?: number | string | null;
+  reviews_count?: number | string | null;
+  image: string;
+  description?: string | null;
+  description_ar?: string | null;
+  specs?: string[] | null;
+  stock?: number | string | null;
+  tags?: string[] | null;
+  badge?: Product["badge"];
+};
+
 function getLocalProducts(): Product[] {
   if (typeof window === "undefined") return INITIAL_PRODUCTS;
   const stored = localStorage.getItem(LOCAL_PRODUCTS_KEY);
@@ -28,7 +47,7 @@ export async function getProducts(): Promise<Product[]> {
     try {
       const { data, error } = await supabase.from("products").select("*");
       if (!error && data && data.length > 0) {
-        return data.map((item: any) => ({
+        return (data as ProductRow[]).map((item) => ({
           id: item.id,
           slug: item.slug,
           name: item.name,
@@ -62,9 +81,14 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 export async function updateProductStock(id: string, newStock: number): Promise<boolean> {
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from("products").update({ stock: Math.max(0, newStock) }).eq("id", id);
+      const { error } = await supabase
+        .from("products")
+        .update({ stock: Math.max(0, newStock) })
+        .eq("id", id);
+      if (error) throw error;
     } catch (e) {
       console.error("Supabase stock update error:", e);
+      throw e;
     }
   }
   const products = getLocalProducts();
@@ -80,7 +104,7 @@ export async function updateProductStock(id: string, newStock: number): Promise<
 export async function saveProduct(product: Product): Promise<Product> {
   const products = getLocalProducts();
   const index = products.findIndex((p) => p.id === product.id);
-  
+
   if (index !== -1) {
     products[index] = product;
   } else {
@@ -90,7 +114,7 @@ export async function saveProduct(product: Product): Promise<Product> {
 
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from("products").upsert({
+      const { error } = await supabase.from("products").upsert({
         id: product.id,
         slug: product.slug,
         name: product.name,
@@ -106,8 +130,10 @@ export async function saveProduct(product: Product): Promise<Product> {
         specs: product.specs,
         tags: product.tags,
       });
+      if (error) throw error;
     } catch (e) {
       console.error("Supabase product save error:", e);
+      throw e;
     }
   }
 
@@ -120,9 +146,11 @@ export async function deleteProduct(id: string): Promise<boolean> {
 
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from("products").delete().eq("id", id);
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
     } catch (e) {
       console.error("Supabase product delete error:", e);
+      throw e;
     }
   }
   return true;

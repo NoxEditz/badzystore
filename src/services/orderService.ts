@@ -48,6 +48,32 @@ export type Order = {
   createdAt: string;
 };
 
+type OrderRow = {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  phone: string;
+  email: string;
+  governorate: string;
+  city: string;
+  street: string;
+  landmark?: string;
+  items?: OrderItem[];
+  subtotal_egp: number | string;
+  shipping_egp: number | string;
+  total_egp: number | string;
+  payment_method: string;
+  payment_status: PaymentStatus;
+  order_status: OrderStatus;
+  payment_reference?: string;
+  created_at: string;
+};
+
+type OrderStatusUpdateRow = {
+  order_status: OrderStatus;
+  payment_status?: PaymentStatus;
+};
+
 const LOCAL_ORDERS_KEY = "badzy_store_orders";
 
 function getLocalOrders(): Order[] {
@@ -139,38 +165,42 @@ export async function createOrder(payload: OrderPayload): Promise<Order> {
     createdAt: new Date().toISOString(),
   };
 
-  // Save to local storage
-  const orders = getLocalOrders();
-  orders.unshift(order);
-  saveLocalOrders(orders);
-
   // Save to Supabase if available
   if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase.from("orders").insert({
-        id: order.id,
-        order_number: order.orderNumber,
-        customer_name: order.customerName,
-        phone: order.phone,
-        email: order.email,
-        governorate: order.governorate,
-        city: order.city,
-        street: order.street,
-        landmark: order.landmark,
-        items: order.items,
-        subtotal_egp: order.subtotalEGP,
-        shipping_egp: order.shippingEGP,
-        total_egp: order.totalEGP,
-        payment_method: order.paymentMethod,
-        payment_status: order.paymentStatus,
-        order_status: order.orderStatus,
-        payment_reference: order.paymentReference,
-        created_at: order.createdAt,
-      });
-    } catch (e) {
-      console.error("Supabase order insert error:", e);
+    const { error } = await supabase.from("orders").insert({
+      id: order.id,
+      order_number: order.orderNumber,
+      customer_name: order.customerName,
+      phone: order.phone,
+      email: order.email,
+      governorate: order.governorate,
+      city: order.city,
+      street: order.street,
+      landmark: order.landmark,
+      items: order.items,
+      subtotal_egp: order.subtotalEGP,
+      shipping_egp: order.shippingEGP,
+      total_egp: order.totalEGP,
+      payment_method: order.paymentMethod,
+      payment_status: order.paymentStatus,
+      order_status: order.orderStatus,
+      payment_reference: order.paymentReference,
+      created_at: order.createdAt,
+    });
+    if (error) {
+      console.error("Supabase order insert error:", error);
+      throw error;
     }
   }
+
+  if (!isSupabaseConfigured || !supabase) {
+    console.warn("Supabase is not configured; order persisted locally only.");
+  }
+
+  // Save to local storage as cache/fallback after successful persistence attempt
+  const currentOrders = getLocalOrders();
+  currentOrders.unshift(order);
+  saveLocalOrders(currentOrders);
 
   return order;
 }
@@ -178,9 +208,12 @@ export async function createOrder(payload: OrderPayload): Promise<Order> {
 export async function getOrders(): Promise<Order[]> {
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (!error && data) {
-        return data.map((o: any) => ({
+        return (data as OrderRow[]).map((o) => ({
           id: o.id,
           orderNumber: o.order_number,
           customerName: o.customer_name,
@@ -224,12 +257,12 @@ export async function updateOrderStatus(
   }
 
   if (isSupabaseConfigured && supabase) {
-    try {
-      const payload: any = { order_status: orderStatus };
-      if (paymentStatus) payload.payment_status = paymentStatus;
-      await supabase.from("orders").update(payload).eq("id", orderId);
-    } catch (e) {
-      console.error("Supabase update order status error:", e);
+    const payload: OrderStatusUpdateRow = { order_status: orderStatus };
+    if (paymentStatus) payload.payment_status = paymentStatus;
+    const { error } = await supabase.from("orders").update(payload).eq("id", orderId);
+    if (error) {
+      console.error("Supabase update order status error:", error);
+      throw error;
     }
   }
   return true;

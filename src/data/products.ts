@@ -15,12 +15,7 @@ import micImg from "@/assets/products/mic.jpg";
 import webcamImg from "@/assets/products/webcam.jpg";
 
 export type Category =
-  | "mice"
-  | "keyboards"
-  | "headsets"
-  | "rgb"
-  | "streaming"
-  | "seating";
+  "mice" | "keyboards" | "headsets" | "rgb" | "streaming" | "seating" | (string & {});
 
 export const CATEGORIES: { id: Category; label: string; labelAr: string }[] = [
   { id: "mice", label: "Mice", labelAr: "ماوسات" },
@@ -414,8 +409,7 @@ export const INITIAL_PRODUCTS: Product[] = [
 
 export const PRODUCTS = INITIAL_PRODUCTS;
 
-export const getProduct = (slug: string) =>
-  PRODUCTS.find((p) => p.slug === slug);
+export const getProduct = (slug: string) => PRODUCTS.find((p) => p.slug === slug);
 
 export const getByCategory = (cat: Category | "all") =>
   cat === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === cat);

@@ -7,6 +7,8 @@ import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
 import { toast } from "sonner";
+import { getPrimaryProductBadge } from "@/services/catalogService";
+import { getStoreSettings } from "@/services/settingsService";
 
 // Wishlist persisted to localStorage
 function useWishlist(id: string) {
@@ -15,14 +17,14 @@ function useWishlist(id: string) {
     try {
       const stored: string[] = JSON.parse(localStorage.getItem("badzy-wishlist") ?? "[]");
       setWished(stored.includes(id));
-    } catch {}
+    } catch {
+      setWished(false);
+    }
   }, [id]);
   const toggle = useCallback(() => {
     setWished((prev) => {
       const stored: string[] = JSON.parse(localStorage.getItem("badzy-wishlist") ?? "[]");
-      const next = prev
-        ? stored.filter((x) => x !== id)
-        : [...stored, id];
+      const next = prev ? stored.filter((x) => x !== id) : [...stored, id];
       localStorage.setItem("badzy-wishlist", JSON.stringify(next));
       return !prev;
     });
@@ -40,9 +42,11 @@ function StarRating({ rating }: { rating: number }) {
           <Star
             key={i}
             className={`h-3 w-3 transition-colors ${
-              filled ? "fill-amber-400 text-amber-400"
-              : half ? "fill-amber-400/50 text-amber-400"
-              : "fill-transparent text-muted-foreground/40"
+              filled
+                ? "fill-amber-400 text-amber-400"
+                : half
+                  ? "fill-amber-400/50 text-amber-400"
+                  : "fill-transparent text-muted-foreground/40"
             }`}
           />
         );
@@ -66,12 +70,9 @@ export const ProductCard = memo(function ProductCard({
   const [heartPopping, setHeartPopping] = useState(false);
 
   const isOutOfStock = product.stock <= 0;
-  const isLowStock = product.stock > 0 && product.stock < 5;
+  const isLowStock = product.stock > 0 && product.stock <= getStoreSettings().lowStockThreshold;
 
-  const discountPct =
-    product.oldPrice && product.oldPrice > product.price
-      ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
-      : null;
+  const primaryBadge = getPrimaryProductBadge(product);
 
   const displayName = lang === "ar" && product.nameAr ? product.nameAr : product.name;
 
@@ -83,13 +84,11 @@ export const ProductCard = memo(function ProductCard({
       setCartBouncing(true);
       setTimeout(() => setCartBouncing(false), 500);
       toast.success(
-        lang === "ar"
-          ? `✅ ${displayName} أضيف للسلة`
-          : `✅ ${displayName} added to cart`,
-        { duration: 2000 }
+        lang === "ar" ? `✅ ${displayName} أضيف للسلة` : `✅ ${displayName} added to cart`,
+        { duration: 2000 },
       );
     },
-    [add, product, isOutOfStock, displayName, lang]
+    [add, product, isOutOfStock, displayName, lang],
   );
 
   const handleWishlist = useCallback(
@@ -99,7 +98,7 @@ export const ProductCard = memo(function ProductCard({
       setHeartPopping(true);
       setTimeout(() => setHeartPopping(false), 350);
     },
-    [toggleWish]
+    [toggleWish],
   );
 
   return (
@@ -125,17 +124,10 @@ export const ProductCard = memo(function ProductCard({
           {/* Gradient overlay */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
 
-          {/* Discount badge */}
-          {discountPct && !isOutOfStock && (
+          {/* Manual/automatic product badge */}
+          {primaryBadge && !isOutOfStock && (
             <span className="absolute left-2.5 top-2.5 z-20 rounded-md bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-[0_0_16px_-4px_oklch(0.58_0.22_25_/_0.9)]">
-              -{discountPct}%
-            </span>
-          )}
-
-          {/* "New" / other badge */}
-          {product.badge && product.badge !== `-${discountPct}%` && !isOutOfStock && (
-            <span className="absolute left-2.5 top-2.5 z-20 rounded-md bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-[0_0_16px_-4px_oklch(0.58_0.22_25_/_0.9)]">
-              {product.badge}
+              {primaryBadge}
             </span>
           )}
 

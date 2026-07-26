@@ -1,19 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { CATEGORIES, PRODUCTS, type Category } from "@/data/products";
+import { type Category } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
+import { getProducts } from "@/services/productService";
+import { fetchStoreSettings } from "@/services/settingsService";
+import { mergeCategories, getCategoryLabel } from "@/services/catalogService";
 
 const searchSchema = z.object({
-  cat: z
-    .enum(["mice", "keyboards", "headsets", "rgb", "streaming", "seating"])
-    .optional(),
+  cat: z.string().optional(),
 });
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (s) => searchSchema.parse(s),
+  loader: async () => {
+    const [products, settings] = await Promise.all([getProducts(), fetchStoreSettings()]);
+    return { products, categories: mergeCategories(settings), settings };
+  },
   head: () => ({
     meta: [
       { title: "Shop Gaming Gear — Badzy Store Egypt" },
@@ -35,12 +40,13 @@ function Shop() {
   const { lang } = useLang();
   const t = DICTIONARY[lang];
   const { cat } = Route.useSearch();
+  const { products: allProducts, categories } = Route.useLoaderData();
   const [sort, setSort] = useState<Sort>("featured");
   const active: Category | "all" = cat ?? "all";
 
   const products = useMemo(() => {
     const base =
-      active === "all" ? [...PRODUCTS] : PRODUCTS.filter((p) => p.category === active);
+      active === "all" ? [...allProducts] : allProducts.filter((p) => p.category === active);
     switch (sort) {
       case "price-asc":
         return base.sort((a, b) => a.price - b.price);
@@ -51,7 +57,7 @@ function Shop() {
       default:
         return base;
     }
-  }, [active, sort]);
+  }, [active, allProducts, sort]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
@@ -60,14 +66,14 @@ function Shop() {
           {lang === "ar" ? "الكتالوج" : "Catalog"}
         </p>
         <h1 className="font-display text-4xl font-bold sm:text-5xl">
-          {active === "all"
-            ? t.nav.shopAll
-            : lang === "ar"
-            ? CATEGORIES.find((c) => c.id === active)?.labelAr
-            : CATEGORIES.find((c) => c.id === active)?.label}
+          {active === "all" ? t.nav.shopAll : getCategoryLabel(active, lang, categories)}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {products.length} {lang === "ar" ? "منتج متوفر بالمخزن" : `product${products.length === 1 ? "" : "s"} in stock`}.
+          {products.length}{" "}
+          {lang === "ar"
+            ? "منتج متوفر بالمخزن"
+            : `product${products.length === 1 ? "" : "s"} in stock`}
+          .
         </p>
       </header>
 
@@ -82,7 +88,7 @@ function Shop() {
         >
           {lang === "ar" ? "الكل" : "All"}
         </Link>
-        {CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <Link
             key={c.id}
             to="/shop"
@@ -104,8 +110,12 @@ function Shop() {
             className="h-9 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-primary"
           >
             <option value="featured">{lang === "ar" ? "المميز" : "Featured"}</option>
-            <option value="price-asc">{lang === "ar" ? "السعر: الأقل إلى الأعلى" : "Price: low → high"}</option>
-            <option value="price-desc">{lang === "ar" ? "السعر: الأعلى إلى الأقل" : "Price: high → low"}</option>
+            <option value="price-asc">
+              {lang === "ar" ? "السعر: الأقل إلى الأعلى" : "Price: low → high"}
+            </option>
+            <option value="price-desc">
+              {lang === "ar" ? "السعر: الأعلى إلى الأقل" : "Price: high → low"}
+            </option>
             <option value="rating">{lang === "ar" ? "الأعلى تقييماً" : "Top rated"}</option>
           </select>
         </div>

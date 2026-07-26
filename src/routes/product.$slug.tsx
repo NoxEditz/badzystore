@@ -1,7 +1,17 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Star, Check, Truck, ShieldCheck, Minus, Plus, ArrowLeft, Clock, MapPin } from "lucide-react";
-import { getProduct, PRODUCTS, type Product } from "@/data/products";
+import {
+  Star,
+  Check,
+  Truck,
+  ShieldCheck,
+  Minus,
+  Plus,
+  ArrowLeft,
+  Clock,
+  MapPin,
+} from "lucide-react";
+import { type Product } from "@/data/products";
 import { useCart } from "@/store/cart";
 import { ProductCard } from "@/components/site/ProductCard";
 import { OrderWhatsAppLink } from "@/components/site/OrderWhatsAppLink";
@@ -9,18 +19,32 @@ import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
 import { toast } from "sonner";
+import { getProducts } from "@/services/productService";
+import {
+  fetchStoreSettings,
+  type StoreCategory,
+  type StoreSettings,
+} from "@/services/settingsService";
+import {
+  getCategoryLabel,
+  getPrimaryProductBadge,
+  mergeCategories,
+} from "@/services/catalogService";
 
 const RECENTLY_VIEWED_KEY = "badzy_recently_viewed";
 
 export const Route = createFileRoute("/product/$slug")({
-  loader: ({ params }) => {
-    const product = getProduct(params.slug);
+  loader: async ({ params }) => {
+    const [products, settings] = await Promise.all([getProducts(), fetchStoreSettings()]);
+    const product = products.find((p) => p.slug === params.slug);
     if (!product) throw notFound();
-    return { product };
+    return { product, products, settings, categories: mergeCategories(settings) };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
-      return { meta: [{ title: "Product not found — Badzy" }, { name: "robots", content: "noindex" }] };
+      return {
+        meta: [{ title: "Product not found — Badzy" }, { name: "robots", content: "noindex" }],
+      };
     }
     const { product } = loaderData;
     const jsonLd = {
@@ -40,7 +64,8 @@ export const Route = createFileRoute("/product/$slug")({
         priceCurrency: "EGP",
         price: product.price,
         itemCondition: "https://schema.org/NewCondition",
-        availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        availability:
+          product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       },
     };
 
@@ -64,7 +89,12 @@ export const Route = createFileRoute("/product/$slug")({
 });
 
 function ProductPage() {
-  const { product } = Route.useLoaderData() as { product: Product };
+  const { product, products, settings, categories } = Route.useLoaderData() as {
+    product: Product;
+    products: Product[];
+    settings: StoreSettings;
+    categories: StoreCategory[];
+  };
   const { lang } = useLang();
   const t = DICTIONARY[lang];
   const add = useCart((s) => s.add);
@@ -73,7 +103,8 @@ function ProductPage() {
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
 
   const isOutOfStock = product.stock <= 0;
-  const isLowStock = product.stock > 0 && product.stock < 5;
+  const isLowStock = product.stock > 0 && product.stock <= settings.lowStockThreshold;
+  const primaryBadge = getPrimaryProductBadge(product, settings);
 
   // Track recently viewed products in localStorage
   useEffect(() => {
@@ -86,17 +117,17 @@ function ProductPage() {
       localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(capped));
 
       const viewedProducts = capped
-        .map((id) => PRODUCTS.find((p) => p.id === id))
+        .map((id) => products.find((p) => p.id === id))
         .filter((p): p is Product => p !== undefined && p.id !== product.id);
       setRecentlyViewed(viewedProducts);
     } catch {
       // ignore
     }
-  }, [product.id]);
+  }, [product.id, products]);
 
-  const related = PRODUCTS.filter(
-    (p) => p.category === product.category && p.id !== product.id,
-  ).slice(0, 4);
+  const related = products
+    .filter((p) => p.category === product.category && p.id !== product.id)
+    .slice(0, 4);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 pb-28 md:pb-16">
@@ -118,9 +149,9 @@ function ProductPage() {
             loading="eager"
             className={`h-full w-full object-cover ${isOutOfStock ? "opacity-40 grayscale" : ""}`}
           />
-          {product.badge && !isOutOfStock && (
+          {primaryBadge && !isOutOfStock && (
             <span className="absolute left-4 top-4 rounded-sm bg-primary px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_0_20px_-4px_oklch(0.58_0.22_25_/_0.9)]">
-              {product.badge}
+              {primaryBadge}
             </span>
           )}
           {isOutOfStock && (
@@ -133,14 +164,12 @@ function ProductPage() {
         {/* Product Info */}
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
-            {product.category}
+            {getCategoryLabel(product.category, lang, categories)}
           </p>
           <h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
             {lang === "ar" && product.nameAr ? product.nameAr : product.name}
           </h1>
-          {lang === "ar" && (
-            <p className="mt-1 text-base text-muted-foreground">{product.name}</p>
-          )}
+          {lang === "ar" && <p className="mt-1 text-base text-muted-foreground">{product.name}</p>}
 
           {/* Rating */}
           <div className="mt-4 flex items-center gap-3">
@@ -224,24 +253,29 @@ function ProductPage() {
                 onClick={() => {
                   if (isOutOfStock) return;
                   add(product, qty);
-                  toast.success(`${qty} × ${lang === "ar" && product.nameAr ? product.nameAr : product.name} ${t.product.addToCart}`);
+                  toast.success(
+                    `${qty} × ${lang === "ar" && product.nameAr ? product.nameAr : product.name} ${t.product.addToCart}`,
+                  );
                 }}
                 className="inline-flex h-12 flex-1 items-center justify-center rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-40"
               >
-                {isOutOfStock ? t.product.outOfStock : `${t.product.addToCart} · ${formatEGP(product.price * qty, lang)}`}
+                {isOutOfStock
+                  ? t.product.outOfStock
+                  : `${t.product.addToCart} · ${formatEGP(product.price * qty, lang)}`}
               </button>
             </div>
 
-            <OrderWhatsAppLink
-              productName={product.name}
-              className="w-full h-11"
-            />
+            <OrderWhatsAppLink productName={product.name} className="w-full h-11" />
           </div>
 
           {/* Value Props & Shipping Table */}
           <div className="mt-6 flex flex-wrap gap-4 text-xs text-muted-foreground border-t border-border/40 pt-4">
-            <span className="inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-primary" /> Delivery in 2–5 days</span>
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-primary" /> 1-Year Warranty</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Truck className="h-3.5 w-3.5 text-primary" /> Delivery in 2–5 days
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" /> 1-Year Warranty
+            </span>
           </div>
 
           {/* Delivery estimate by Governorate Table */}
@@ -267,7 +301,10 @@ function ProductPage() {
             <h3 className="mb-4 font-display text-lg font-bold">{t.product.specs}</h3>
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {product.specs.map((s: { label: string; value: string }) => (
-                <div key={s.label} className="flex justify-between gap-4 border-b border-border/40 pb-2 text-sm">
+                <div
+                  key={s.label}
+                  className="flex justify-between gap-4 border-b border-border/40 pb-2 text-sm"
+                >
                   <dt className="text-muted-foreground">{s.label}</dt>
                   <dd className="text-right font-medium text-foreground">{s.value}</dd>
                 </div>
@@ -283,14 +320,20 @@ function ProductPage() {
         {product.sampleReviews && product.sampleReviews.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
             {product.sampleReviews.map((rev) => (
-              <div key={rev.id} className="rounded-lg border border-border/60 bg-card p-4 space-y-2 text-sm">
+              <div
+                key={rev.id}
+                className="rounded-lg border border-border/60 bg-card p-4 space-y-2 text-sm"
+              >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-foreground">{rev.author}</span>
                   <span className="text-xs text-muted-foreground">{rev.date}</span>
                 </div>
                 <div className="flex items-center gap-1 text-primary">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className={`h-3.5 w-3.5 ${i < rev.rating ? "fill-primary" : "opacity-30"}`} />
+                    <Star
+                      key={i}
+                      className={`h-3.5 w-3.5 ${i < rev.rating ? "fill-primary" : "opacity-30"}`}
+                    />
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -300,7 +343,9 @@ function ProductPage() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Rated 4.8 / 5 stars based on customer feedback across Egypt.</p>
+          <p className="text-sm text-muted-foreground">
+            Rated 4.8 / 5 stars based on customer feedback across Egypt.
+          </p>
         )}
       </section>
 
@@ -334,7 +379,9 @@ function ProductPage() {
           <p className="text-xs font-semibold text-foreground truncate max-w-[160px]">
             {lang === "ar" && product.nameAr ? product.nameAr : product.name}
           </p>
-          <p className="font-display text-sm font-bold text-primary">{formatEGP(product.price * qty, lang)}</p>
+          <p className="font-display text-sm font-bold text-primary">
+            {formatEGP(product.price * qty, lang)}
+          </p>
         </div>
         <button
           type="button"

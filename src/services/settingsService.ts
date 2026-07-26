@@ -4,11 +4,25 @@ import { supabase } from "@/integrations/supabase/client";
 export type StoreSettings = {
   freeShippingThresholdEGP: number;
   defaultShippingFeeEGP: number;
+  lowStockThreshold: number;
   whatsappNumber: string;
   instapayHandle: string;
   announcementEnabled: boolean;
   announcementTextEn: string;
   announcementTextAr: string;
+  heroTagEn: string;
+  heroTagAr: string;
+  heroTitleEn: string;
+  heroTitleAr: string;
+  heroSubtitleEn: string;
+  heroSubtitleAr: string;
+  customCategories: StoreCategory[];
+};
+
+export type StoreCategory = {
+  id: string;
+  label: string;
+  labelAr: string;
 };
 
 const LOCAL_SETTINGS_KEY = "badzy_store_settings";
@@ -17,24 +31,65 @@ const SUPABASE_SETTINGS_KEY = "store_settings";
 const DEFAULT_STORE_SETTINGS: StoreSettings = {
   freeShippingThresholdEGP: CONFIG.freeShippingThresholdEGP,
   defaultShippingFeeEGP: CONFIG.defaultShippingFeeEGP,
+  lowStockThreshold: 5,
   whatsappNumber: CONFIG.whatsappNumber,
   instapayHandle: CONFIG.instapayHandle,
   announcementEnabled: false,
   announcementTextEn: "Free shipping on orders over 2,500 EGP!",
   announcementTextAr: "شحن مجاني للطلبات فوق 2,500 ج.م!",
+  heroTagEn: "New Drop — Viper Pro Wireless",
+  heroTagAr: "منتج جديد — فايبر برو وايرلس",
+  heroTitleEn: "Gear that moves as fast as you do.",
+  heroTitleAr: "معدات تسبق سرعتك.",
+  heroSubtitleEn:
+    "Performance gaming gear, fast delivery, and secure checkout for players across Egypt.",
+  heroSubtitleAr: "معدات جيمينج احترافية، توصيل سريع، ودفع آمن للاعبين في كل مصر.",
+  customCategories: [],
 };
+
+export function normalizeStoreCategories(value: unknown): StoreCategory[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  return value
+    .map((category) => {
+      const source =
+        category && typeof category === "object" ? (category as Partial<StoreCategory>) : {};
+      const label = String(source.label || "").trim();
+      const id = String(source.id || label.toLowerCase().replace(/[^a-z0-9]+/g, "-"))
+        .trim()
+        .toLowerCase();
+      const labelAr = String(source.labelAr || label).trim();
+      return { id, label, labelAr };
+    })
+    .filter((category) => {
+      if (!category.id || !category.label || seen.has(category.id)) return false;
+      seen.add(category.id);
+      return true;
+    });
+}
 
 export function normalizeStoreSettings(value: unknown): StoreSettings {
   const source = value && typeof value === "object" ? (value as Partial<StoreSettings>) : {};
 
   return {
-    freeShippingThresholdEGP: Number(source.freeShippingThresholdEGP) || DEFAULT_STORE_SETTINGS.freeShippingThresholdEGP,
-    defaultShippingFeeEGP: Number(source.defaultShippingFeeEGP) || DEFAULT_STORE_SETTINGS.defaultShippingFeeEGP,
+    freeShippingThresholdEGP:
+      Number(source.freeShippingThresholdEGP) || DEFAULT_STORE_SETTINGS.freeShippingThresholdEGP,
+    defaultShippingFeeEGP:
+      Number(source.defaultShippingFeeEGP) || DEFAULT_STORE_SETTINGS.defaultShippingFeeEGP,
+    lowStockThreshold: Number(source.lowStockThreshold) || DEFAULT_STORE_SETTINGS.lowStockThreshold,
     whatsappNumber: source.whatsappNumber || DEFAULT_STORE_SETTINGS.whatsappNumber,
     instapayHandle: source.instapayHandle || DEFAULT_STORE_SETTINGS.instapayHandle,
     announcementEnabled: Boolean(source.announcementEnabled),
     announcementTextEn: source.announcementTextEn || DEFAULT_STORE_SETTINGS.announcementTextEn,
     announcementTextAr: source.announcementTextAr || DEFAULT_STORE_SETTINGS.announcementTextAr,
+    heroTagEn: source.heroTagEn || DEFAULT_STORE_SETTINGS.heroTagEn,
+    heroTagAr: source.heroTagAr || DEFAULT_STORE_SETTINGS.heroTagAr,
+    heroTitleEn: source.heroTitleEn || DEFAULT_STORE_SETTINGS.heroTitleEn,
+    heroTitleAr: source.heroTitleAr || DEFAULT_STORE_SETTINGS.heroTitleAr,
+    heroSubtitleEn: source.heroSubtitleEn || DEFAULT_STORE_SETTINGS.heroSubtitleEn,
+    heroSubtitleAr: source.heroSubtitleAr || DEFAULT_STORE_SETTINGS.heroSubtitleAr,
+    customCategories: normalizeStoreCategories(source.customCategories),
   };
 }
 

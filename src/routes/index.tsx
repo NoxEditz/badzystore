@@ -1,14 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Zap, Truck, ShieldCheck, Headphones, CreditCard, Star, Package, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Zap,
+  Truck,
+  ShieldCheck,
+  Headphones,
+  CreditCard,
+  Star,
+  Package,
+  Users,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
 import heroImg from "@/assets/hero.jpg";
-import { PRODUCTS, CATEGORIES } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Reveal } from "@/components/site/Reveal";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
+import { getProducts } from "@/services/productService";
+import { fetchStoreSettings } from "@/services/settingsService";
+import { mergeCategories } from "@/services/catalogService";
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    const [products, settings] = await Promise.all([getProducts(), fetchStoreSettings()]);
+    return { products, categories: mergeCategories(settings), settings };
+  },
   head: () => ({
     meta: [
       { title: "Badzy Store — Gaming gear built fast" },
@@ -20,7 +36,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Badzy Store — Gaming gear built fast" },
       {
         property: "og:description",
-        content: "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
+        content:
+          "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
       },
     ],
     links: [{ rel: "preload", as: "image", href: heroImg, fetchPriority: "high" } as never],
@@ -52,17 +69,15 @@ function HeroLogo() {
   );
 }
 
-
-
-
 function Home() {
   const { lang } = useLang();
   const t = DICTIONARY[lang];
+  const { products, categories, settings } = Route.useLoaderData();
 
-  const featured = PRODUCTS.filter((p) => p.badge).slice(0, 4);
-  const trending = PRODUCTS.slice(0, 8);
-  const totalProducts = PRODUCTS.length;
-  const totalReviews = PRODUCTS.reduce((acc, p) => acc + p.reviews, 0);
+  const featured = products.filter((p) => p.badge).slice(0, 4);
+  const trending = products.slice(0, 8);
+  const totalProducts = products.length;
+  const totalReviews = products.reduce((acc, p) => acc + p.reviews, 0);
 
   return (
     <>
@@ -81,9 +96,17 @@ function Home() {
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/75 to-background/20" />
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
           <div className="badzy-grid animate-grid-pan absolute inset-0 opacity-40" />
-          <div className="badzy-orb animate-drift" style={{ width: 480, height: 480, left: "-8%", top: "15%", backgroundImage: "radial-gradient(circle, oklch(0.58 0.22 25 / 0.5) 0%, transparent 65%)" }} />
-
-
+          <div
+            className="badzy-orb animate-drift"
+            style={{
+              width: 480,
+              height: 480,
+              left: "-8%",
+              top: "15%",
+              backgroundImage:
+                "radial-gradient(circle, oklch(0.58 0.22 25 / 0.5) 0%, transparent 65%)",
+            }}
+          />
         </div>
 
         <div className="relative mx-auto flex min-h-[80vh] max-w-7xl items-center px-4 py-24 sm:px-6">
@@ -97,40 +120,20 @@ function Home() {
             <Reveal>
               <span className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-primary backdrop-blur">
                 <span className="animate-blink h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_2px_oklch(0.58_0.22_25_/_0.9)]" />
-                {t.hero.tag}
+                {lang === "ar" ? settings.heroTagAr : settings.heroTagEn}
               </span>
             </Reveal>
 
             <Reveal delay={80}>
               <h1 className="max-w-3xl font-display text-5xl font-bold leading-[0.95] tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
-                {lang === "ar" ? (
-                  <>
-                    معدات تسبق{" "}
-                    <span
-                      className="animate-gradient bg-clip-text text-transparent"
-                      style={{ backgroundImage: "linear-gradient(90deg, oklch(0.1 0.01 25), oklch(0.58 0.24 25), oklch(0.1 0.01 25))" }}
-                    >
-                      سرعتك.
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Gear that{" "}
-                    <span
-                      className="animate-gradient bg-clip-text text-transparent"
-                      style={{ backgroundImage: "linear-gradient(90deg, oklch(0.1 0.01 25), oklch(0.58 0.24 25), oklch(0.1 0.01 25))" }}
-                    >
-                      moves
-                    </span>
-                    <br />
-                    as fast as you do.
-                  </>
-                )}
+                {lang === "ar" ? settings.heroTitleAr : settings.heroTitleEn}
               </h1>
             </Reveal>
 
             <Reveal delay={160}>
-              <p className="mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">{t.hero.subtitle}</p>
+              <p className="mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">
+                {lang === "ar" ? settings.heroSubtitleAr : settings.heroSubtitleEn}
+              </p>
             </Reveal>
 
             <Reveal delay={240} className="mt-8 flex flex-wrap items-center gap-3">
@@ -148,7 +151,9 @@ function Home() {
                 className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-background/60 px-6 text-sm font-semibold text-foreground backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
               >
                 {t.hero.ctaRgb}
-                <span className="text-primary transition-transform duration-300 group-hover:rotate-90">+</span>
+                <span className="text-primary transition-transform duration-300 group-hover:rotate-90">
+                  +
+                </span>
               </Link>
             </Reveal>
 
@@ -156,7 +161,10 @@ function Home() {
             <Reveal delay={320} className="mt-12 flex flex-wrap gap-6">
               {[
                 { value: `${totalProducts}+`, label: lang === "ar" ? "منتج متوفر" : "Products" },
-                { value: `${(totalReviews / 1000).toFixed(1)}K+`, label: lang === "ar" ? "تقييم" : "Reviews" },
+                {
+                  value: `${(totalReviews / 1000).toFixed(1)}K+`,
+                  label: lang === "ar" ? "تقييم" : "Reviews",
+                },
                 { value: "24h", label: lang === "ar" ? "توصيل أسرع" : "Fastest delivery" },
                 { value: "Egypt", label: lang === "ar" ? "توصيل لكل محافظة" : "Nationwide" },
               ].map((stat) => (
@@ -186,12 +194,12 @@ function Home() {
           {[0, 1].map((dup) => (
             <div key={dup} className="flex items-center gap-10 pr-10">
               {[
-                { icon: Truck,        label: t.marquee.ship24h     },
-                { icon: Zap,          label: t.marquee.freeShipping },
-                { icon: CreditCard,   label: t.marquee.cod         },
-                { icon: ShieldCheck,  label: t.marquee.warranty    },
-                { icon: Headphones,   label: t.marquee.support     },
-                { icon: ShieldCheck,  label: t.marquee.tested      },
+                { icon: Truck, label: t.marquee.ship24h },
+                { icon: Zap, label: t.marquee.freeShipping },
+                { icon: CreditCard, label: t.marquee.cod },
+                { icon: ShieldCheck, label: t.marquee.warranty },
+                { icon: Headphones, label: t.marquee.support },
+                { icon: ShieldCheck, label: t.marquee.tested },
               ].map(({ icon: Icon, label }, i) => (
                 <div key={i} className="flex items-center gap-3 text-muted-foreground font-medium">
                   <Icon className="h-4 w-4 text-primary" />
@@ -204,7 +212,6 @@ function Home() {
         </div>
       </section>
 
-
       {/* ── Categories ── */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <Reveal className="mb-8 flex items-end justify-between gap-4">
@@ -216,13 +223,16 @@ function Home() {
               {lang === "ar" ? "اختر سلاحك في الجيم." : "Pick your weapon."}
             </h2>
           </div>
-          <Link to="/shop" className="hidden text-sm font-medium text-muted-foreground transition hover:text-primary sm:inline-flex">
+          <Link
+            to="/shop"
+            className="hidden text-sm font-medium text-muted-foreground transition hover:text-primary sm:inline-flex"
+          >
             {t.nav.shopAll} →
           </Link>
         </Reveal>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {CATEGORIES.map((c, i) => (
+          {categories.map((c, i) => (
             <Reveal key={c.id} delay={i * 60}>
               <Link
                 to="/shop"
@@ -253,10 +263,26 @@ function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[
-              { icon: ShieldCheck, title: t.trust.secureCheckout, sub: lang === "ar" ? "مشفر بالكامل" : "256-bit encrypted" },
-              { icon: Truck, title: t.trust.egyptDelivery, sub: lang === "ar" ? "كل محافظات مصر" : "All governorates" },
-              { icon: Package, title: t.trust.easyReturns, sub: lang === "ar" ? "سهل وسريع" : "Hassle-free" },
-              { icon: Star, title: t.trust.warranty, sub: lang === "ar" ? "ضمان أصلي" : "On all products" },
+              {
+                icon: ShieldCheck,
+                title: t.trust.secureCheckout,
+                sub: lang === "ar" ? "مشفر بالكامل" : "256-bit encrypted",
+              },
+              {
+                icon: Truck,
+                title: t.trust.egyptDelivery,
+                sub: lang === "ar" ? "كل محافظات مصر" : "All governorates",
+              },
+              {
+                icon: Package,
+                title: t.trust.easyReturns,
+                sub: lang === "ar" ? "سهل وسريع" : "Hassle-free",
+              },
+              {
+                icon: Star,
+                title: t.trust.warranty,
+                sub: lang === "ar" ? "ضمان أصلي" : "On all products",
+              },
             ].map(({ icon: Icon, title, sub }) => (
               <div key={title} className="flex flex-col items-center text-center gap-3 p-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
@@ -284,7 +310,7 @@ function Home() {
             </h2>
           </div>
         </Reveal>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {featured.map((p, i) => (
             <Reveal key={p.id} delay={i * 80}>
               <ProductCard product={p} priority={i < 2} />
@@ -304,7 +330,10 @@ function Home() {
               {lang === "ar" ? "المنتجات الأكثر مبيعاً في مصر." : "What players are grabbing."}
             </h2>
           </div>
-          <Link to="/shop" className="text-sm font-medium text-muted-foreground transition hover:text-primary">
+          <Link
+            to="/shop"
+            className="text-sm font-medium text-muted-foreground transition hover:text-primary"
+          >
             {t.nav.shopAll} →
           </Link>
         </Reveal>

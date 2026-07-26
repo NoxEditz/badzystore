@@ -49,26 +49,10 @@ import {
 import { type Product, CATEGORIES, type Category } from "@/data/products";
 import { formatEGP } from "@/lib/currency";
 import { toast } from "sonner";
+import { mergeCategories } from "@/services/catalogService";
 
 /* ─────────────────────────────────────── Types ─────────────────────── */
 type AdminTab = "orders" | "products" | "categories" | "analytics" | "customers" | "settings";
-
-type CustomCategory = {
-  id: string;
-  label: string;
-  labelAr: string;
-};
-
-function getCustomCategories(): CustomCategory[] {
-  try {
-    return JSON.parse(localStorage.getItem("badzy-custom-categories") ?? "[]");
-  } catch {
-    return [];
-  }
-}
-function saveCustomCategories(cats: CustomCategory[]) {
-  localStorage.setItem("badzy-custom-categories", JSON.stringify(cats));
-}
 
 /* ─────────────────────────────────────── Route ─────────────────────── */
 export const Route = createFileRoute("/admin")({
@@ -83,7 +67,12 @@ export const Route = createFileRoute("/admin")({
 
 /* ─────────────────────────────────────── Auth Gate ─────────────────── */
 import { useServerFn } from "@tanstack/react-start";
-import { adminSignIn, adminSignOut, getAdminStatus, saveAdminStoreSettings } from "@/lib/admin.functions";
+import {
+  adminSignIn,
+  adminSignOut,
+  getAdminStatus,
+  saveAdminStoreSettings,
+} from "@/lib/admin.functions";
 
 function AdminPage() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -98,7 +87,9 @@ function AdminPage() {
   useEffect(() => {
     // Migrate legacy client-side flag off the browser; it was never a real check.
     localStorage.removeItem("badzy_admin_auth");
-    status().then((s) => setAuthenticated(s.authenticated)).catch(() => setAuthenticated(false));
+    status()
+      .then((s) => setAuthenticated(s.authenticated))
+      .catch(() => setAuthenticated(false));
   }, [status]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -114,8 +105,8 @@ function AdminPage() {
       } else {
         toast.error("Invalid passkey.");
       }
-    } catch (err: any) {
-      toast.error(err?.message || "Sign-in failed. Please try again.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -186,7 +177,6 @@ function AdminPage() {
   return <AdminDashboard onLogout={handleLogout} />;
 }
 
-
 /* ─────────────────────────────────────── Dashboard ─────────────────── */
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<AdminTab>("orders");
@@ -204,18 +194,30 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const totalRevenue = orders.reduce((s, o) => s + o.totalEGP, 0);
   const lowStockCount = products.filter((p) => p.stock < 5).length;
   const pendingCount = orders.filter(
-    (o) => o.orderStatus === "placed" || o.paymentStatus === "pending"
+    (o) => o.orderStatus === "placed" || o.paymentStatus === "pending",
   ).length;
   const deliveredCount = orders.filter((o) => o.orderStatus === "delivered").length;
 
   const tabs: { id: AdminTab; label: string; icon: React.ReactNode; count?: number }[] = [
-    { id: "orders", label: "Orders", icon: <ShoppingBag className="h-4 w-4" />, count: orders.length },
-    { id: "products", label: "Products", icon: <Package className="h-4 w-4" />, count: products.length },
+    {
+      id: "orders",
+      label: "Orders",
+      icon: <ShoppingBag className="h-4 w-4" />,
+      count: orders.length,
+    },
+    {
+      id: "products",
+      label: "Products",
+      icon: <Package className="h-4 w-4" />,
+      count: products.length,
+    },
     { id: "categories", label: "Categories", icon: <Tag className="h-4 w-4" /> },
     { id: "analytics", label: "Analytics", icon: <BarChart2 className="h-4 w-4" /> },
     { id: "customers", label: "Customers", icon: <Users className="h-4 w-4" /> },
@@ -255,10 +257,34 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
       {/* Stats Row */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<TrendingUp className="h-5 w-5 text-emerald-400" />} label="Total Revenue" value={formatEGP(totalRevenue)} sub={`${orders.length} orders`} color="emerald" />
-        <StatCard icon={<ShoppingBag className="h-5 w-5 text-primary" />} label="Pending Action" value={String(pendingCount)} sub="Needs attention" color="red" />
-        <StatCard icon={<CheckCircle className="h-5 w-5 text-sky-400" />} label="Delivered" value={String(deliveredCount)} sub="Completed orders" color="sky" />
-        <StatCard icon={<AlertTriangle className="h-5 w-5 text-amber-400" />} label="Low Stock" value={String(lowStockCount)} sub="Under 5 units" color="amber" />
+        <StatCard
+          icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
+          label="Total Revenue"
+          value={formatEGP(totalRevenue)}
+          sub={`${orders.length} orders`}
+          color="emerald"
+        />
+        <StatCard
+          icon={<ShoppingBag className="h-5 w-5 text-primary" />}
+          label="Pending Action"
+          value={String(pendingCount)}
+          sub="Needs attention"
+          color="red"
+        />
+        <StatCard
+          icon={<CheckCircle className="h-5 w-5 text-sky-400" />}
+          label="Delivered"
+          value={String(deliveredCount)}
+          sub="Completed orders"
+          color="sky"
+        />
+        <StatCard
+          icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
+          label="Low Stock"
+          value={String(lowStockCount)}
+          sub="Under 5 units"
+          color="amber"
+        />
       </div>
 
       {/* Tabs */}
@@ -276,9 +302,15 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {tab.icon}
             {tab.label}
             {tab.count !== undefined && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                activeTab === tab.id ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"
-              }`}>{tab.count}</span>
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  activeTab === tab.id
+                    ? "bg-primary/15 text-primary"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {tab.count}
+              </span>
             )}
           </button>
         ))}
@@ -286,8 +318,12 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
       {/* Tab Content */}
       {activeTab === "orders" && <OrdersTab orders={orders} onRefresh={loadData} />}
-      {activeTab === "products" && <ProductsTab products={products} onRefresh={loadData} />}
-      {activeTab === "categories" && <CategoriesTab />}
+      {activeTab === "products" && (
+        <ProductsTab products={products} settings={settings} onRefresh={loadData} />
+      )}
+      {activeTab === "categories" && (
+        <CategoriesTab settings={settings} setSettings={setSettings} />
+      )}
       {activeTab === "analytics" && <AnalyticsTab orders={orders} products={products} />}
       {activeTab === "customers" && <CustomersTab orders={orders} />}
       {activeTab === "settings" && <SettingsTab settings={settings} setSettings={setSettings} />}
@@ -296,13 +332,27 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 }
 
 /* ─────────────────────────────────────── Stat Card ─────────────────── */
-function StatCard({ icon, label, value, sub, color }: {
-  icon: React.ReactNode; label: string; value: string; sub: string; color: string;
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub: string;
+  color: string;
 }) {
   return (
-    <div className={`rounded-xl border border-border/60 bg-card p-5 transition hover:border-border`}>
+    <div
+      className={`rounded-xl border border-border/60 bg-card p-5 transition hover:border-border`}
+    >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
         {icon}
       </div>
       <p className="mt-3 font-display text-3xl font-bold">{value}</p>
@@ -317,28 +367,52 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
-    let list = filter === "all" ? orders : orders.filter((o) => o.orderStatus === filter || o.paymentStatus === filter);
+    let list =
+      filter === "all"
+        ? orders
+        : orders.filter((o) => o.orderStatus === filter || o.paymentStatus === filter);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((o) =>
-        o.customerName?.toLowerCase().includes(q) ||
-        o.phone?.includes(q) ||
-        o.orderNumber?.toLowerCase().includes(q)
+      list = list.filter(
+        (o) =>
+          o.customerName?.toLowerCase().includes(q) ||
+          o.phone?.includes(q) ||
+          o.orderNumber?.toLowerCase().includes(q),
       );
     }
     return list;
   }, [orders, filter, search]);
 
   const exportCSV = () => {
-    const header = ["Order#", "Customer", "Phone", "City", "Governorate", "Total", "Status", "Payment", "Date"];
+    const header = [
+      "Order#",
+      "Customer",
+      "Phone",
+      "City",
+      "Governorate",
+      "Total",
+      "Status",
+      "Payment",
+      "Date",
+    ];
     const rows = filtered.map((o) => [
-      o.orderNumber, o.customerName, o.phone, o.city, o.governorate,
-      o.totalEGP, o.orderStatus, o.paymentStatus, new Date(o.createdAt).toLocaleDateString(),
+      o.orderNumber,
+      o.customerName,
+      o.phone,
+      o.city,
+      o.governorate,
+      o.totalEGP,
+      o.orderStatus,
+      o.paymentStatus,
+      new Date(o.createdAt).toLocaleDateString(),
     ]);
     const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "badzy-orders.csv"; a.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "badzy-orders.csv";
+    a.click();
     URL.revokeObjectURL(url);
     toast.success("Orders exported as CSV!");
   };
@@ -375,7 +449,10 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{filtered.length} orders</span>
-          <button onClick={exportCSV} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-semibold transition hover:bg-secondary">
+          <button
+            onClick={exportCSV}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-semibold transition hover:bg-secondary"
+          >
             <Download className="h-3.5 w-3.5" /> Export CSV
           </button>
         </div>
@@ -416,19 +493,28 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
           <div>
             <div className="flex items-center gap-2">
               <span className="font-display text-sm font-bold text-primary">{o.orderNumber}</span>
-              <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${statusColors[o.orderStatus] ?? ""}`}>
+              <span
+                className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${statusColors[o.orderStatus] ?? ""}`}
+              >
                 {o.orderStatus}
               </span>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              <strong className="text-foreground">{o.customerName}</strong> · {o.phone} · {o.city}, {o.governorate}
+              <strong className="text-foreground">{o.customerName}</strong> · {o.phone} · {o.city},{" "}
+              {o.governorate}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="font-display font-bold text-primary">{formatEGP(o.totalEGP)}</span>
-          <span className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString()}</span>
-          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          <span className="text-xs text-muted-foreground">
+            {new Date(o.createdAt).toLocaleDateString()}
+          </span>
+          {expanded ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
         </div>
       </div>
 
@@ -479,11 +565,20 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
           {/* Items */}
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {o.items.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3 rounded-lg border border-border/40 bg-background/60 p-2.5 text-xs">
-                <img src={item.image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover bg-black" />
+              <div
+                key={idx}
+                className="flex items-center gap-3 rounded-lg border border-border/40 bg-background/60 p-2.5 text-xs"
+              >
+                <img
+                  src={item.image}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-lg object-cover bg-black"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{item.name}</p>
-                  <p className="text-muted-foreground">Qty {item.qty} × {formatEGP(item.priceEGP)}</p>
+                  <p className="text-muted-foreground">
+                    Qty {item.qty} × {formatEGP(item.priceEGP)}
+                  </p>
                 </div>
               </div>
             ))}
@@ -491,7 +586,8 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
 
           {/* Address */}
           <p className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">Address:</span> {o.street}{o.landmark ? `, ${o.landmark}` : ""}, {o.city}, {o.governorate}
+            <span className="font-semibold text-foreground">Address:</span> {o.street}
+            {o.landmark ? `, ${o.landmark}` : ""}, {o.city}, {o.governorate}
           </p>
         </div>
       )}
@@ -500,7 +596,15 @@ function OrderCard({ order: o, onRefresh }: { order: Order; onRefresh: () => voi
 }
 
 /* ─────────────────────────────────────── Products Tab ──────────────── */
-function ProductsTab({ products, onRefresh }: { products: Product[]; onRefresh: () => void }) {
+function ProductsTab({
+  products,
+  settings,
+  onRefresh,
+}: {
+  products: Product[];
+  settings: StoreSettings;
+  onRefresh: () => void;
+}) {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [search, setSearch] = useState("");
@@ -524,7 +628,10 @@ function ProductsTab({ products, onRefresh }: { products: Product[]; onRefresh: 
           />
         </div>
         <button
-          onClick={() => { setShowAddForm(true); setEditingProduct(null); }}
+          onClick={() => {
+            setShowAddForm(true);
+            setEditingProduct(null);
+          }}
           className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110"
         >
           <Plus className="h-3.5 w-3.5" /> Add Product
@@ -534,21 +641,40 @@ function ProductsTab({ products, onRefresh }: { products: Product[]; onRefresh: 
       {(showAddForm || editingProduct) && (
         <ProductForm
           product={editingProduct ?? undefined}
-          onSaved={() => { setShowAddForm(false); setEditingProduct(null); onRefresh(); }}
-          onCancel={() => { setShowAddForm(false); setEditingProduct(null); }}
+          settings={settings}
+          onSaved={() => {
+            setShowAddForm(false);
+            setEditingProduct(null);
+            onRefresh();
+          }}
+          onCancel={() => {
+            setShowAddForm(false);
+            setEditingProduct(null);
+          }}
         />
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((p) => (
-          <div key={p.id} className="flex flex-col justify-between rounded-xl border border-border/60 bg-card p-4 transition hover:border-border">
+          <div
+            key={p.id}
+            className="flex flex-col justify-between rounded-xl border border-border/60 bg-card p-4 transition hover:border-border"
+          >
             <div className="flex gap-3">
-              <img src={p.image} alt={p.name} className="h-16 w-16 shrink-0 rounded-lg object-cover bg-black" />
+              <img
+                src={p.image}
+                alt={p.name}
+                className="h-16 w-16 shrink-0 rounded-lg object-cover bg-black"
+              />
               <div className="min-w-0 flex-1">
                 <h4 className="truncate text-sm font-semibold">{p.name}</h4>
                 {p.nameAr && <p className="truncate text-xs text-muted-foreground">{p.nameAr}</p>}
-                <p className="mt-1 font-display font-bold text-primary text-sm">{formatEGP(p.price)}</p>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{p.category}</p>
+                <p className="mt-1 font-display font-bold text-primary text-sm">
+                  {formatEGP(p.price)}
+                </p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {p.category}
+                </p>
               </div>
             </div>
 
@@ -562,19 +688,36 @@ function ProductsTab({ products, onRefresh }: { products: Product[]; onRefresh: 
                   onBlur={async (e) => {
                     const val = parseInt(e.target.value, 10);
                     if (!isNaN(val)) {
-                      await updateProductStock(p.id, val);
-                      toast.success(`Stock updated for ${p.name}`);
-                      onRefresh();
+                      try {
+                        await updateProductStock(p.id, val);
+                        toast.success(`Stock updated for ${p.name}`);
+                        onRefresh();
+                      } catch (error) {
+                        toast.error(
+                          `Stock update failed: ${error instanceof Error ? error.message : "Supabase rejected the change"}`,
+                        );
+                      }
                     }
                   }}
                   className="h-7 w-16 rounded-lg border border-border bg-background px-2 text-center text-xs font-bold outline-none focus:border-primary"
                 />
-                {p.stock === 0 && <span className="rounded bg-destructive/20 px-1.5 py-0.5 text-[10px] font-bold text-destructive">OUT</span>}
-                {p.stock > 0 && p.stock < 5 && <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">LOW</span>}
+                {p.stock === 0 && (
+                  <span className="rounded bg-destructive/20 px-1.5 py-0.5 text-[10px] font-bold text-destructive">
+                    OUT
+                  </span>
+                )}
+                {p.stock > 0 && p.stock < 5 && (
+                  <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-400">
+                    LOW
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => { setEditingProduct(p); setShowAddForm(false); }}
+                  onClick={() => {
+                    setEditingProduct(p);
+                    setShowAddForm(false);
+                  }}
                   className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
@@ -582,9 +725,15 @@ function ProductsTab({ products, onRefresh }: { products: Product[]; onRefresh: 
                 <button
                   onClick={async () => {
                     if (confirm(`Delete "${p.name}"?`)) {
-                      await deleteProduct(p.id);
-                      toast.success("Product deleted");
-                      onRefresh();
+                      try {
+                        await deleteProduct(p.id);
+                        toast.success("Product deleted");
+                        onRefresh();
+                      } catch (error) {
+                        toast.error(
+                          `Delete failed: ${error instanceof Error ? error.message : "Supabase rejected the change"}`,
+                        );
+                      }
                     }
                   }}
                   className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
@@ -603,14 +752,16 @@ function ProductsTab({ products, onRefresh }: { products: Product[]; onRefresh: 
 /* ─────────────────────────────────────── Product Form ──────────────── */
 function ProductForm({
   product,
+  settings,
   onSaved,
   onCancel,
 }: {
   product?: Product;
+  settings: StoreSettings;
   onSaved: () => void;
   onCancel: () => void;
 }) {
-  const allCategories = [...CATEGORIES, ...getCustomCategories()];
+  const allCategories = mergeCategories(settings);
   const [name, setName] = useState(product?.name ?? "");
   const [nameAr, setNameAr] = useState(product?.nameAr ?? "");
   const [category, setCategory] = useState<string>(product?.category ?? "mice");
@@ -620,9 +771,21 @@ function ProductForm({
   const [image, setImage] = useState(product?.image ?? "");
   const [desc, setDesc] = useState(product?.shortDesc ?? "");
   const [descAr, setDescAr] = useState(product?.shortDescAr ?? "");
+  const [badge, setBadge] = useState(product?.badge ?? "");
+  const [tags, setTags] = useState(
+    (product?.tags?.length ? product.tags : [product?.category ?? "mice"]).join(", "),
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedTags = Array.from(
+      new Set(
+        tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      ),
+    );
     const p: Product = {
       id: product?.id ?? `prod_${Date.now()}`,
       slug: product?.slug ?? name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -638,12 +801,18 @@ function ProductForm({
       shortDescAr: descAr || undefined,
       specs: product?.specs ?? [],
       stock: Number(stock),
-      tags: product?.tags ?? [category],
-      badge: product?.badge,
+      tags: normalizedTags.length ? normalizedTags : [category],
+      badge: badge.trim() || undefined,
     };
-    await saveProduct(p);
-    toast.success(product ? "Product updated!" : "Product added!");
-    onSaved();
+    try {
+      await saveProduct(p);
+      toast.success(product ? "Product updated!" : "Product added!");
+      onSaved();
+    } catch (error) {
+      toast.error(
+        `Product save failed: ${error instanceof Error ? error.message : "Supabase rejected the change"}`,
+      );
+    }
   };
 
   return (
@@ -652,60 +821,146 @@ function ProductForm({
       className="rounded-xl border border-primary/30 bg-card p-5 space-y-4 text-sm"
     >
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-bold">{product ? "Edit Product" : "New Product"}</h3>
-        <button type="button" onClick={onCancel} className="text-muted-foreground hover:text-foreground">
+        <h3 className="font-display text-lg font-bold">
+          {product ? "Edit Product" : "New Product"}
+        </h3>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-muted-foreground hover:text-foreground"
+        >
           <X className="h-5 w-5" />
         </button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name (EN)" required>
-          <input required value={name} onChange={(e) => setName(e.target.value)} className="admin-input" />
+          <input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="admin-input"
+          />
         </Field>
         <Field label="Name (AR)">
-          <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} dir="rtl" className="admin-input" />
+          <input
+            value={nameAr}
+            onChange={(e) => setNameAr(e.target.value)}
+            dir="rtl"
+            className="admin-input"
+          />
         </Field>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Category" required>
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="admin-input">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="admin-input"
+          >
             {allCategories.map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
             ))}
           </select>
         </Field>
         <Field label="Price (EGP)" required>
-          <input type="number" required value={price} onChange={(e) => setPrice(Number(e.target.value))} className="admin-input" />
+          <input
+            type="number"
+            required
+            value={price}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            className="admin-input"
+          />
         </Field>
         <Field label="Old Price (EGP)">
-          <input type="number" value={oldPrice} onChange={(e) => setOldPrice(Number(e.target.value))} className="admin-input" placeholder="0 = none" />
+          <input
+            type="number"
+            value={oldPrice}
+            onChange={(e) => setOldPrice(Number(e.target.value))}
+            className="admin-input"
+            placeholder="0 = none"
+          />
         </Field>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Stock">
-          <input type="number" required value={stock} onChange={(e) => setStock(Number(e.target.value))} className="admin-input" />
+          <input
+            type="number"
+            required
+            value={stock}
+            onChange={(e) => setStock(Number(e.target.value))}
+            className="admin-input"
+          />
         </Field>
         <Field label="Image URL">
-          <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..." className="admin-input" />
+          <input
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+            placeholder="https://..."
+            className="admin-input"
+          />
         </Field>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Description (EN)">
-          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className="admin-input !h-20 resize-none" />
+          <textarea
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            className="admin-input !h-20 resize-none"
+          />
         </Field>
         <Field label="Description (AR)">
-          <textarea value={descAr} onChange={(e) => setDescAr(e.target.value)} dir="rtl" className="admin-input !h-20 resize-none" />
+          <textarea
+            value={descAr}
+            onChange={(e) => setDescAr(e.target.value)}
+            dir="rtl"
+            className="admin-input !h-20 resize-none"
+          />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Manual Badge / Label">
+          <input
+            value={badge}
+            onChange={(e) => setBadge(e.target.value)}
+            className="admin-input"
+            placeholder="New, Best seller, Low stock, -20%..."
+          />
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            Leave blank to allow automatic labels from discount, stock, and tags.
+          </p>
+        </Field>
+        <Field label="Tags (comma separated)">
+          <input
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            className="admin-input"
+            placeholder="new, best-seller, wireless, rgb"
+          />
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            Use tags like new, best-seller, low-stock, wireless, rgb for search and labels.
+          </p>
         </Field>
       </div>
 
       <div className="flex gap-2">
-        <button type="submit" className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110">
+        <button
+          type="submit"
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110"
+        >
           <Save className="h-3.5 w-3.5" /> {product ? "Save Changes" : "Add Product"}
         </button>
-        <button type="button" onClick={onCancel} className="h-9 rounded-lg border border-border px-4 text-xs font-semibold transition hover:bg-secondary">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-9 rounded-lg border border-border px-4 text-xs font-semibold transition hover:bg-secondary"
+        >
           Cancel
         </button>
       </div>
@@ -714,32 +969,56 @@ function ProductForm({
 }
 
 /* ─────────────────────────────────────── Categories Tab ────────────── */
-function CategoriesTab() {
+function CategoriesTab({
+  settings,
+  setSettings,
+}: {
+  settings: StoreSettings;
+  setSettings: (s: StoreSettings) => void;
+}) {
   const builtIn = CATEGORIES;
-  const [custom, setCustom] = useState<CustomCategory[]>(getCustomCategories());
   const [label, setLabel] = useState("");
   const [labelAr, setLabelAr] = useState("");
+  const [saving, setSaving] = useState(false);
+  const saveSettings = useServerFn(saveAdminStoreSettings);
 
-  const addCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!label.trim()) return;
-    const newCat: CustomCategory = {
-      id: label.toLowerCase().replace(/\s+/g, "-"),
-      label: label.trim(),
-      labelAr: labelAr.trim(),
-    };
-    const updated = [...custom, newCat];
-    saveCustomCategories(updated);
-    setCustom(updated);
-    setLabel(""); setLabelAr("");
-    toast.success(`Category "${label}" added!`);
+  const persistCategories = async (customCategories: StoreSettings["customCategories"]) => {
+    const nextSettings = { ...settings, customCategories };
+    setSaving(true);
+    try {
+      const res = await saveSettings({ data: { settings: nextSettings } });
+      updateStoreSettings(res.settings);
+      setSettings(res.settings);
+      toast.success("Categories saved to Supabase!");
+    } catch (error) {
+      toast.error(
+        `Category save failed: ${error instanceof Error ? error.message : "Please try again"}`,
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const deleteCustom = (id: string) => {
-    const updated = custom.filter((c) => c.id !== id);
-    saveCustomCategories(updated);
-    setCustom(updated);
-    toast.success("Category removed");
+  const addCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!label.trim()) return;
+    const newCat = {
+      id: label
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, ""),
+      label: label.trim(),
+      labelAr: labelAr.trim() || label.trim(),
+    };
+    const updated = [...settings.customCategories.filter((c) => c.id !== newCat.id), newCat];
+    await persistCategories(updated);
+    setLabel("");
+    setLabelAr("");
+  };
+
+  const deleteCustom = async (id: string) => {
+    const updated = settings.customCategories.filter((c) => c.id !== id);
+    await persistCategories(updated);
   };
 
   return (
@@ -748,12 +1027,17 @@ function CategoriesTab() {
         <h3 className="font-display text-lg font-bold mb-4">Built-in Categories</h3>
         <div className="grid gap-2 sm:grid-cols-2">
           {builtIn.map((c) => (
-            <div key={c.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-3">
+            <div
+              key={c.id}
+              className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-3"
+            >
               <div>
                 <p className="text-sm font-semibold">{c.label}</p>
                 <p className="text-xs text-muted-foreground">{c.labelAr}</p>
               </div>
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground uppercase">{c.id}</span>
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground uppercase">
+                {c.id}
+              </span>
             </div>
           ))}
         </div>
@@ -761,17 +1045,24 @@ function CategoriesTab() {
 
       <div>
         <h3 className="font-display text-lg font-bold mb-4">Custom Categories</h3>
-        {custom.length === 0 ? (
+        {settings.customCategories.length === 0 ? (
           <p className="text-sm text-muted-foreground">No custom categories yet. Add one below.</p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 mb-4">
-            {custom.map((c) => (
-              <div key={c.id} className="flex items-center justify-between rounded-xl border border-primary/30 bg-card px-4 py-3">
+            {settings.customCategories.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between rounded-xl border border-primary/30 bg-card px-4 py-3"
+              >
                 <div>
                   <p className="text-sm font-semibold">{c.label}</p>
                   <p className="text-xs text-muted-foreground">{c.labelAr}</p>
                 </div>
-                <button onClick={() => deleteCustom(c.id)} className="text-muted-foreground hover:text-destructive transition">
+                <button
+                  disabled={saving}
+                  onClick={() => deleteCustom(c.id)}
+                  className="text-muted-foreground hover:text-destructive transition disabled:opacity-50"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -779,18 +1070,37 @@ function CategoriesTab() {
           </div>
         )}
 
-        <form onSubmit={addCategory} className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+        <form
+          onSubmit={addCategory}
+          className="rounded-xl border border-border/60 bg-card p-5 space-y-3"
+        >
           <h4 className="text-sm font-bold">Add New Category</h4>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Label (EN)" required>
-              <input required value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Controllers" className="admin-input" />
+              <input
+                required
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="e.g. Controllers"
+                className="admin-input"
+              />
             </Field>
             <Field label="Label (AR)">
-              <input value={labelAr} onChange={(e) => setLabelAr(e.target.value)} dir="rtl" placeholder="مثال: أذرع تحكم" className="admin-input" />
+              <input
+                value={labelAr}
+                onChange={(e) => setLabelAr(e.target.value)}
+                dir="rtl"
+                placeholder="مثال: أذرع تحكم"
+                className="admin-input"
+              />
             </Field>
           </div>
-          <button type="submit" className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110">
-            <Plus className="h-3.5 w-3.5" /> Add Category
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
+          >
+            <Plus className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Add Category"}
           </button>
         </form>
       </div>
@@ -807,20 +1117,43 @@ function AnalyticsTab({ orders, products }: { orders: Order[]; products: Product
   const productFrequency: Record<string, { name: string; count: number; revenue: number }> = {};
   for (const order of orders) {
     for (const item of order.items) {
-      if (!productFrequency[item.name]) productFrequency[item.name] = { name: item.name, count: 0, revenue: 0 };
+      if (!productFrequency[item.name])
+        productFrequency[item.name] = { name: item.name, count: 0, revenue: 0 };
       productFrequency[item.name].count += item.qty;
       productFrequency[item.name].revenue += item.qty * item.priceEGP;
     }
   }
-  const topProducts = Object.values(productFrequency).sort((a, b) => b.count - a.count).slice(0, 5);
+  const topProducts = Object.values(productFrequency)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
 
   // Order status breakdown
   const statusBreakdown = [
-    { label: "Placed", count: orders.filter((o) => o.orderStatus === "placed").length, color: "bg-blue-400" },
-    { label: "Confirmed", count: orders.filter((o) => o.orderStatus === "confirmed").length, color: "bg-emerald-400" },
-    { label: "Shipped", count: orders.filter((o) => o.orderStatus === "shipped").length, color: "bg-amber-400" },
-    { label: "Delivered", count: orders.filter((o) => o.orderStatus === "delivered").length, color: "bg-green-400" },
-    { label: "Cancelled", count: orders.filter((o) => o.orderStatus === "cancelled").length, color: "bg-red-400" },
+    {
+      label: "Placed",
+      count: orders.filter((o) => o.orderStatus === "placed").length,
+      color: "bg-blue-400",
+    },
+    {
+      label: "Confirmed",
+      count: orders.filter((o) => o.orderStatus === "confirmed").length,
+      color: "bg-emerald-400",
+    },
+    {
+      label: "Shipped",
+      count: orders.filter((o) => o.orderStatus === "shipped").length,
+      color: "bg-amber-400",
+    },
+    {
+      label: "Delivered",
+      count: orders.filter((o) => o.orderStatus === "delivered").length,
+      color: "bg-green-400",
+    },
+    {
+      label: "Cancelled",
+      count: orders.filter((o) => o.orderStatus === "cancelled").length,
+      color: "bg-red-400",
+    },
   ];
 
   // Payment breakdown
@@ -836,15 +1169,21 @@ function AnalyticsTab({ orders, products }: { orders: Order[]; products: Product
       {/* KPI Row */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-border/60 bg-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avg Order Value</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Avg Order Value
+          </p>
           <p className="mt-2 font-display text-2xl font-bold">{formatEGP(avgOrderValue)}</p>
         </div>
         <div className="rounded-xl border border-border/60 bg-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Orders</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Total Orders
+          </p>
           <p className="mt-2 font-display text-2xl font-bold">{orders.length}</p>
         </div>
         <div className="rounded-xl border border-border/60 bg-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Products Listed</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Products Listed
+          </p>
           <p className="mt-2 font-display text-2xl font-bold">{products.length}</p>
         </div>
       </div>
@@ -876,7 +1215,10 @@ function AnalyticsTab({ orders, products }: { orders: Order[]; products: Product
         <h3 className="mb-4 font-display text-base font-bold">Payment Methods</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {paymentBreakdown.map((p) => (
-            <div key={p.label} className="rounded-lg border border-border/40 bg-background/60 p-3 text-center">
+            <div
+              key={p.label}
+              className="rounded-lg border border-border/40 bg-background/60 p-3 text-center"
+            >
               <p className="font-display text-2xl font-bold">{p.count}</p>
               <p className="mt-1 text-xs text-muted-foreground">{p.label}</p>
             </div>
@@ -916,10 +1258,27 @@ function CustomersTab({ orders }: { orders: Order[] }) {
 
   // Deduplicate by phone
   const customers = useMemo(() => {
-    const map: Record<string, { name: string; phone: string; city: string; governorate: string; orders: number; spent: number }> = {};
+    const map: Record<
+      string,
+      {
+        name: string;
+        phone: string;
+        city: string;
+        governorate: string;
+        orders: number;
+        spent: number;
+      }
+    > = {};
     for (const o of orders) {
       if (!map[o.phone]) {
-        map[o.phone] = { name: o.customerName, phone: o.phone, city: o.city, governorate: o.governorate, orders: 0, spent: 0 };
+        map[o.phone] = {
+          name: o.customerName,
+          phone: o.phone,
+          city: o.city,
+          governorate: o.governorate,
+          orders: 0,
+          spent: 0,
+        };
       }
       map[o.phone].orders++;
       map[o.phone].spent += o.totalEGP;
@@ -965,8 +1324,12 @@ function CustomersTab({ orders }: { orders: Order[] }) {
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-display font-bold text-primary text-sm">{formatEGP(c.spent)}</p>
-                  <p className="text-xs text-muted-foreground">{c.orders} order{c.orders !== 1 ? "s" : ""}</p>
+                  <p className="font-display font-bold text-primary text-sm">
+                    {formatEGP(c.spent)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {c.orders} order{c.orders !== 1 ? "s" : ""}
+                  </p>
                 </div>
               </div>
             </div>
@@ -978,7 +1341,13 @@ function CustomersTab({ orders }: { orders: Order[] }) {
 }
 
 /* ─────────────────────────────────────── Settings Tab ──────────────── */
-function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSettings: (s: StoreSettings) => void }) {
+function SettingsTab({
+  settings,
+  setSettings,
+}: {
+  settings: StoreSettings;
+  setSettings: (s: StoreSettings) => void;
+}) {
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const saveSettings = useServerFn(saveAdminStoreSettings);
@@ -1027,41 +1396,78 @@ function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSe
       >
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-display text-lg font-bold">Store Configuration</h3>
-          {loadingSettings && <span className="text-xs text-muted-foreground">Loading live settings…</span>}
+          {loadingSettings && (
+            <span className="text-xs text-muted-foreground">Loading live settings…</span>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Free Shipping Threshold (EGP)">
-            <input type="number" value={settings.freeShippingThresholdEGP}
-              onChange={(e) => setSettings({ ...settings, freeShippingThresholdEGP: Number(e.target.value) })}
-              className="admin-input" />
+            <input
+              type="number"
+              value={settings.freeShippingThresholdEGP}
+              onChange={(e) =>
+                setSettings({ ...settings, freeShippingThresholdEGP: Number(e.target.value) })
+              }
+              className="admin-input"
+            />
           </Field>
           <Field label="Default Shipping Fee (EGP)">
-            <input type="number" value={settings.defaultShippingFeeEGP}
-              onChange={(e) => setSettings({ ...settings, defaultShippingFeeEGP: Number(e.target.value) })}
-              className="admin-input" />
+            <input
+              type="number"
+              value={settings.defaultShippingFeeEGP}
+              onChange={(e) =>
+                setSettings({ ...settings, defaultShippingFeeEGP: Number(e.target.value) })
+              }
+              className="admin-input"
+            />
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Low Stock Threshold">
+            <input
+              type="number"
+              min={1}
+              value={settings.lowStockThreshold}
+              onChange={(e) =>
+                setSettings({ ...settings, lowStockThreshold: Number(e.target.value) })
+              }
+              className="admin-input"
+            />
+          </Field>
+          <Field label="Announcement Visibility">
+            <div className="rounded-xl border border-border/60 bg-background px-3 py-2 text-xs text-muted-foreground">
+              Enable the top banner to show shipping or promo messaging across the site.
+            </div>
           </Field>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="WhatsApp Number (+20...)">
-            <input type="text" value={settings.whatsappNumber}
+            <input
+              type="text"
+              value={settings.whatsappNumber}
               onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
-              className="admin-input" />
+              className="admin-input"
+            />
           </Field>
           <Field label="InstaPay Handle">
-            <input type="text" value={settings.instapayHandle}
+            <input
+              type="text"
+              value={settings.instapayHandle}
               onChange={(e) => setSettings({ ...settings, instapayHandle: e.target.value })}
-              className="admin-input" />
+              className="admin-input"
+            />
           </Field>
         </div>
 
         <div className="border-t border-border/60 pt-5 mt-5">
           <h4 className="font-display text-md font-bold mb-4">Top Announcement Banner</h4>
-          
+
           <label className="flex items-center gap-3 mb-4 cursor-pointer">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={settings.announcementEnabled}
               onChange={(e) => setSettings({ ...settings, announcementEnabled: e.target.checked })}
               className="accent-primary h-4 w-4"
@@ -1072,23 +1478,92 @@ function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSe
           {settings.announcementEnabled && (
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Banner Text (EN)">
-                <input type="text" value={settings.announcementTextEn}
+                <input
+                  type="text"
+                  value={settings.announcementTextEn}
                   onChange={(e) => setSettings({ ...settings, announcementTextEn: e.target.value })}
                   placeholder="e.g. Free shipping!"
-                  className="admin-input" />
+                  className="admin-input"
+                />
               </Field>
               <Field label="Banner Text (AR)">
-                <input type="text" value={settings.announcementTextAr}
+                <input
+                  type="text"
+                  value={settings.announcementTextAr}
                   onChange={(e) => setSettings({ ...settings, announcementTextAr: e.target.value })}
                   dir="rtl"
                   placeholder="مثال: شحن مجاني!"
-                  className="admin-input" />
+                  className="admin-input"
+                />
               </Field>
             </div>
           )}
         </div>
 
-        <button type="submit" disabled={savingSettings} className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60">
+        <div className="border-t border-border/60 pt-5 mt-5 space-y-4">
+          <h4 className="font-display text-md font-bold">Homepage Hero Content</h4>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Hero Tag (EN)">
+              <input
+                type="text"
+                value={settings.heroTagEn}
+                onChange={(e) => setSettings({ ...settings, heroTagEn: e.target.value })}
+                className="admin-input"
+              />
+            </Field>
+            <Field label="Hero Tag (AR)">
+              <input
+                type="text"
+                value={settings.heroTagAr}
+                onChange={(e) => setSettings({ ...settings, heroTagAr: e.target.value })}
+                dir="rtl"
+                className="admin-input"
+              />
+            </Field>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Hero Title (EN)">
+              <input
+                type="text"
+                value={settings.heroTitleEn}
+                onChange={(e) => setSettings({ ...settings, heroTitleEn: e.target.value })}
+                className="admin-input"
+              />
+            </Field>
+            <Field label="Hero Title (AR)">
+              <input
+                type="text"
+                value={settings.heroTitleAr}
+                onChange={(e) => setSettings({ ...settings, heroTitleAr: e.target.value })}
+                dir="rtl"
+                className="admin-input"
+              />
+            </Field>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Hero Subtitle (EN)">
+              <textarea
+                value={settings.heroSubtitleEn}
+                onChange={(e) => setSettings({ ...settings, heroSubtitleEn: e.target.value })}
+                className="admin-input !h-20 resize-none"
+              />
+            </Field>
+            <Field label="Hero Subtitle (AR)">
+              <textarea
+                value={settings.heroSubtitleAr}
+                onChange={(e) => setSettings({ ...settings, heroSubtitleAr: e.target.value })}
+                dir="rtl"
+                className="admin-input !h-20 resize-none"
+              />
+            </Field>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={savingSettings}
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
+        >
           <Save className="h-4 w-4" /> {savingSettings ? "Saving…" : "Save Settings"}
         </button>
       </form>
@@ -1097,11 +1572,20 @@ function SettingsTab({ settings, setSettings }: { settings: StoreSettings; setSe
 }
 
 /* ─────────────────────────────────────── Helpers ───────────────────── */
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}{required && <span className="text-primary ml-0.5">*</span>}
+        {label}
+        {required && <span className="text-primary ml-0.5">*</span>}
       </label>
       {children}
     </div>

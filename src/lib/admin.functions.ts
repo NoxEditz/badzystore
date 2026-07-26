@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { StoreSettings } from "@/services/settingsService";
+import type { Product } from "@/data/products";
 
 // Server-side admin auth. The passkey lives in ADMIN_PASSKEY (server env)
 // and is checked with a timing-safe compare. Success stores an unlocked
@@ -43,21 +44,88 @@ function checkRateLimit(key: string) {
 
 function normalizeSettings(value: unknown): StoreSettings {
   const source = value && typeof value === "object" ? (value as Partial<StoreSettings>) : {};
+  const customCategories = Array.isArray(source.customCategories)
+    ? source.customCategories
+        .map((category) => {
+          const label = String(category?.label || "").trim();
+          const id = String(category?.id || label.toLowerCase().replace(/[^a-z0-9]+/g, "-"))
+            .trim()
+            .toLowerCase();
+          return {
+            id,
+            label,
+            labelAr: String(category?.labelAr || label).trim(),
+          };
+        })
+        .filter(
+          (category, index, categories) =>
+            Boolean(category.id && category.label) &&
+            categories.findIndex((c) => c.id === category.id) === index,
+        )
+    : [];
 
   return {
     freeShippingThresholdEGP: Number(source.freeShippingThresholdEGP) || 2500,
     defaultShippingFeeEGP: Number(source.defaultShippingFeeEGP) || 50,
+    lowStockThreshold: Number(source.lowStockThreshold) || 5,
     whatsappNumber: source.whatsappNumber || "",
     instapayHandle: source.instapayHandle || "",
     announcementEnabled: Boolean(source.announcementEnabled),
     announcementTextEn: source.announcementTextEn || "Free shipping on orders over 2,500 EGP!",
     announcementTextAr: source.announcementTextAr || "شحن مجاني للطلبات فوق 2,500 ج.م!",
+    heroTagEn: source.heroTagEn || "New Drop — Viper Pro Wireless",
+    heroTagAr: source.heroTagAr || "منتج جديد — فايبر برو وايرلس",
+    heroTitleEn: source.heroTitleEn || "Gear that moves as fast as you do.",
+    heroTitleAr: source.heroTitleAr || "معدات تسبق سرعتك.",
+    heroSubtitleEn:
+      source.heroSubtitleEn ||
+      "Performance gaming gear, fast delivery, and secure checkout for players across Egypt.",
+    heroSubtitleAr:
+      source.heroSubtitleAr || "معدات جيمينج احترافية، توصيل سريع، ودفع آمن للاعبين في كل مصر.",
+    customCategories,
+  };
+}
+
+function normalizeProduct(value: Product): Product {
+  const fallbackId = `prod_${Date.now()}`;
+  const name = String(value.name || "").trim();
+  if (!name) throw new Error("Product name is required.");
+
+  const slug = String(value.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"))
+    .trim()
+    .toLowerCase();
+  if (!slug) throw new Error("Product slug is required.");
+
+  return {
+    id: String(value.id || fallbackId),
+    slug,
+    name,
+    nameAr: value.nameAr ? String(value.nameAr).trim() : undefined,
+    category: String(value.category || "mice"),
+    price: Math.max(0, Number(value.price) || 0),
+    oldPrice: value.oldPrice && Number(value.oldPrice) > 0 ? Number(value.oldPrice) : undefined,
+    rating: Number(value.rating) || 5,
+    reviews: Number(value.reviews) || 0,
+    image: String(value.image || "").trim(),
+    shortDesc: String(value.shortDesc || "").trim(),
+    shortDescAr: value.shortDescAr ? String(value.shortDescAr).trim() : undefined,
+    specs: Array.isArray(value.specs) ? value.specs : [],
+    stock: Math.max(0, Number(value.stock) || 0),
+    tags: Array.isArray(value.tags)
+      ? Array.from(new Set(value.tags.map((tag) => String(tag).trim()).filter(Boolean)))
+      : [],
+    badge: value.badge ? String(value.badge).trim() : undefined,
   };
 }
 
 export const adminSignIn = createServerFn({ method: "POST" })
   .validator((data: { passkey: string }) => {
-    if (!data || typeof data.passkey !== "string" || data.passkey.length < 4 || data.passkey.length > 256) {
+    if (
+      !data ||
+      typeof data.passkey !== "string" ||
+      data.passkey.length < 4 ||
+      data.passkey.length > 256
+    ) {
       throw new Error("Invalid passkey.");
     }
     return data;
@@ -65,7 +133,8 @@ export const adminSignIn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     checkRateLimit("global");
 
-    const expected = process.env.ADMIN_PASSKEY || (process.env.NODE_ENV !== "production" ? "6565" : "");
+    const expected =
+      process.env.ADMIN_PASSKEY || (process.env.NODE_ENV !== "production" ? "6565" : "");
     if (!expected) throw new Error("ADMIN_PASSKEY is not configured on the server.");
 
     if (!passkeyMatches(data.passkey, expected)) {
@@ -113,4 +182,73 @@ export const saveAdminStoreSettings = createServerFn({ method: "POST" })
     if (error) throw error;
 
     return { ok: true as const, settings: normalized };
+  });
+
+export const saveAdminProduct = createServerFn({ method: "POST" })
+  .validator((data: { product: Product }) => {
+    if (!data || !data.product || typeof data.product !== "object") {
+      throw new Error("Invalid product payload.");
+    }
+    return data;
+  })
+  .handler(async ({ data }) => {
+    const { requireAdmin } = await import("./admin.server");
+    await requireAdmin();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const product = normalizeProduct(data.product);
+    const { error } = await supabaseAdmin.from("products").upsert({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      name_ar: product.nameAr,
+      description: product.shortDesc,
+      description_ar: product.shortDescAr,
+      price_egp: product.price,
+      old_price_egp: product.oldPrice,
+      category: product.category,
+      image: product.image,
+      stock: product.stock,
+      badge: product.badge,
+      specs: product.specs,
+      tags: product.tags,
+      rating: product.rating,
+      reviews_count: product.reviews,
+    });
+
+    if (error) throw error;
+    return { ok: true as const, product };
+  });
+
+export const updateAdminProductStock = createServerFn({ method: "POST" })
+  .validator((data: { id: string; stock: number }) => {
+    if (!data || typeof data.id !== "string") throw new Error("Invalid product id.");
+    return { id: data.id, stock: Math.max(0, Number(data.stock) || 0) };
+  })
+  .handler(async ({ data }) => {
+    const { requireAdmin } = await import("./admin.server");
+    await requireAdmin();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("products")
+      .update({ stock: data.stock })
+      .eq("id", data.id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+export const deleteAdminProduct = createServerFn({ method: "POST" })
+  .validator((data: { id: string }) => {
+    if (!data || typeof data.id !== "string") throw new Error("Invalid product id.");
+    return data;
+  })
+  .handler(async ({ data }) => {
+    const { requireAdmin } = await import("./admin.server");
+    await requireAdmin();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("products").delete().eq("id", data.id);
+    if (error) throw error;
+    return { ok: true as const };
   });
