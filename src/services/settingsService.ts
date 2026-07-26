@@ -69,7 +69,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   lowStockThreshold: 5,
   whatsappNumber: CONFIG.whatsappNumber,
   instapayHandle: CONFIG.instapayHandle,
-  announcementEnabled: false,
+  announcementEnabled: true,
   announcementTextEn: "Free shipping on orders over 2,500 EGP!",
   announcementTextAr: "شحن مجاني للطلبات فوق 2,500 ج.م!",
   announcementItems: [
@@ -239,7 +239,7 @@ export function normalizeStoreSettings(value: unknown): StoreSettings {
     lowStockThreshold: Number(source.lowStockThreshold) || DEFAULT_STORE_SETTINGS.lowStockThreshold,
     whatsappNumber: source.whatsappNumber || DEFAULT_STORE_SETTINGS.whatsappNumber,
     instapayHandle: source.instapayHandle || DEFAULT_STORE_SETTINGS.instapayHandle,
-    announcementEnabled: Boolean(source.announcementEnabled),
+    announcementEnabled: source.announcementEnabled !== false,
     announcementTextEn: source.announcementTextEn || DEFAULT_STORE_SETTINGS.announcementTextEn,
     announcementTextAr: source.announcementTextAr || DEFAULT_STORE_SETTINGS.announcementTextAr,
     announcementItems: normalizeAnnouncementItems(source.announcementItems),

@@ -74,7 +74,7 @@ function normalizeSettings(value: unknown): StoreSettings {
     lowStockThreshold: Number(source.lowStockThreshold) || 5,
     whatsappNumber: source.whatsappNumber || "",
     instapayHandle: source.instapayHandle || "",
-    announcementEnabled: Boolean(source.announcementEnabled),
+    announcementEnabled: source.announcementEnabled !== false,
     announcementTextEn: source.announcementTextEn || "Free shipping on orders over 2,500 EGP!",
     announcementTextAr: source.announcementTextAr || "شحن مجاني للطلبات فوق 2,500 ج.م!",
     announcementItems: Array.isArray(source.announcementItems)

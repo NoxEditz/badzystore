@@ -74,6 +74,7 @@ function Home() {
   const visibleMarqueeItems = marqueeItems.length
     ? marqueeItems.map((item) => (lang === "ar" ? item.textAr || item.textEn : item.textEn || item.textAr))
     : fallbackMarqueeItems;
+  const showMarquee = visibleMarqueeItems.length > 0;
   const trustIcons = [ShieldCheck, Truck, Package, Star];
 
   return (
@@ -183,7 +184,7 @@ function Home() {
       </section>
 
       {/* ── Marquee Strip ── */}
-      {settings.announcementEnabled && visibleMarqueeItems.length > 0 && (
+      {showMarquee && (
       <section className="relative overflow-hidden border-b border-border/60 bg-card/30 py-4">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" />
