@@ -54,7 +54,7 @@ const STATUS_VALUES = ["placed", "confirmed", "shipped", "delivered", "cancelled
 const PAYMENT_STATUS_VALUES = ["pending", "verified", "paid", "failed", "cod"] as const;
 
 export const placeOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => placeOrderSchema.parse(input))
+  .validator((input: unknown) => placeOrderSchema.parse(input))
   .handler(async ({ data }): Promise<PlaceOrderResult> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -198,7 +198,7 @@ export const getAdminOrders = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const updateAdminOrderStatus = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         id: z.string().min(1),
