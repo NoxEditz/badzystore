@@ -55,6 +55,10 @@ function normalizeSettings(value: unknown): StoreSettings {
             id,
             label,
             labelAr: String(category?.labelAr || label).trim(),
+            emoji: category?.emoji ? String(category.emoji).trim() : undefined,
+            image: category?.image ? String(category.image).trim() : undefined,
+            visible: category?.visible !== false,
+            sortOrder: Number(category?.sortOrder) || 0,
           };
         })
         .filter(
@@ -73,6 +77,20 @@ function normalizeSettings(value: unknown): StoreSettings {
     announcementEnabled: Boolean(source.announcementEnabled),
     announcementTextEn: source.announcementTextEn || "Free shipping on orders over 2,500 EGP!",
     announcementTextAr: source.announcementTextAr || "شحن مجاني للطلبات فوق 2,500 ج.م!",
+    announcementItems: Array.isArray(source.announcementItems)
+      ? source.announcementItems
+          .map((item, index) => {
+            const textEn = String(item?.textEn || "").trim();
+            const textAr = String(item?.textAr || textEn).trim();
+            const id = String(
+              item?.id || textEn.toLowerCase().replace(/[^a-z0-9]+/g, "-") || `announcement-${index + 1}`,
+            )
+              .trim()
+              .toLowerCase();
+            return { id, textEn, textAr, enabled: item?.enabled !== false };
+          })
+          .filter((item) => item.id && (item.textEn || item.textAr))
+      : [],
     heroTagEn: source.heroTagEn || "New Drop — Viper Pro Wireless",
     heroTagAr: source.heroTagAr || "منتج جديد — فايبر برو وايرلس",
     heroTitleEn: source.heroTitleEn || "Gear that moves as fast as you do.",
@@ -107,6 +125,9 @@ function normalizeProduct(value: Product): Product {
     rating: Number(value.rating) || 5,
     reviews: Number(value.reviews) || 0,
     image: String(value.image || "").trim(),
+    images: Array.isArray(value.images)
+      ? Array.from(new Set(value.images.map((url) => String(url).trim()).filter(Boolean)))
+      : [String(value.image || "").trim()].filter(Boolean),
     shortDesc: String(value.shortDesc || "").trim(),
     shortDescAr: value.shortDescAr ? String(value.shortDescAr).trim() : undefined,
     specs: Array.isArray(value.specs) ? value.specs : [],
@@ -115,6 +136,11 @@ function normalizeProduct(value: Product): Product {
       ? Array.from(new Set(value.tags.map((tag) => String(tag).trim()).filter(Boolean)))
       : [],
     badge: value.badge ? String(value.badge).trim() : undefined,
+    badgeColor: value.badgeColor ? String(value.badgeColor).trim() : undefined,
+    badgeTextColor: value.badgeTextColor ? String(value.badgeTextColor).trim() : undefined,
+    badgeStyle: ["solid", "outline", "glow"].includes(String(value.badgeStyle))
+      ? value.badgeStyle
+      : undefined,
   };
 }
 
@@ -208,8 +234,12 @@ export const saveAdminProduct = createServerFn({ method: "POST" })
       old_price_egp: product.oldPrice,
       category: product.category,
       image: product.image,
+      images: product.images || [product.image].filter(Boolean),
       stock: product.stock,
       badge: product.badge,
+      badge_color: product.badgeColor,
+      badge_text_color: product.badgeTextColor,
+      badge_style: product.badgeStyle,
       specs: product.specs,
       tags: product.tags,
       rating: product.rating,

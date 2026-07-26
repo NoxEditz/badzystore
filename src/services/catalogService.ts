@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { CATEGORIES, type Category, type Product } from "@/data/products";
 import {
   fetchStoreSettings,
@@ -12,11 +13,13 @@ export function mergeCategories(
   settings: Pick<StoreSettings, "customCategories"> = getStoreSettings(),
 ): CatalogCategory[] {
   const seen = new Set<string>();
-  return [...CATEGORIES, ...settings.customCategories].filter((category) => {
-    if (seen.has(category.id)) return false;
-    seen.add(category.id);
-    return true;
-  }) as CatalogCategory[];
+  return [...CATEGORIES, ...settings.customCategories]
+    .filter((category) => {
+      if (seen.has(category.id) || category.visible === false) return false;
+      seen.add(category.id);
+      return true;
+    })
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)) as CatalogCategory[];
 }
 
 export async function fetchCatalogCategories(): Promise<CatalogCategory[]> {
@@ -60,4 +63,17 @@ export function getPrimaryProductBadge(
   )
     return "Best seller";
   return undefined;
+}
+
+export function getProductBadgeStyle(product: Product): CSSProperties | undefined {
+  if (!product.badgeColor && !product.badgeTextColor) return undefined;
+  return {
+    backgroundColor: product.badgeStyle === "outline" ? "transparent" : product.badgeColor,
+    borderColor: product.badgeColor,
+    color: product.badgeTextColor,
+    boxShadow:
+      product.badgeStyle === "glow" && product.badgeColor
+        ? `0 0 20px -4px ${product.badgeColor}`
+        : undefined,
+  };
 }

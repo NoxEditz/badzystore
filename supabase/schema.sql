@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS public.products (
   rating NUMERIC DEFAULT 5.0,
   reviews_count INT DEFAULT 0,
   badge TEXT,
+  badge_color TEXT,
+  badge_text_color TEXT,
+  badge_style TEXT CHECK (badge_style IS NULL OR badge_style IN ('solid', 'outline', 'glow')),
   tags TEXT[] DEFAULT '{}',
   specs JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()

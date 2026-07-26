@@ -28,6 +28,7 @@ import {
 import {
   getCategoryLabel,
   getPrimaryProductBadge,
+  getProductBadgeStyle,
   mergeCategories,
 } from "@/services/catalogService";
 
@@ -101,10 +102,17 @@ function ProductPage() {
 
   const [qty, setQty] = useState(1);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
+  const galleryImages = product.images?.length ? product.images : [product.image];
+  const [selectedImage, setSelectedImage] = useState(galleryImages[0]);
 
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock <= settings.lowStockThreshold;
   const primaryBadge = getPrimaryProductBadge(product, settings);
+  const badgeStyle = getProductBadgeStyle(product);
+
+  useEffect(() => {
+    setSelectedImage(galleryImages[0]);
+  }, [galleryImages[0], product.id]);
 
   // Track recently viewed products in localStorage
   useEffect(() => {
@@ -139,25 +147,46 @@ function ProductPage() {
       </Link>
 
       <div className="grid gap-10 lg:grid-cols-2">
-        {/* Product Image */}
-        <div className="relative overflow-hidden rounded-xl border border-border/60 bg-black aspect-square">
-          <img
-            src={product.image}
-            alt={product.name}
-            width={900}
-            height={900}
-            loading="eager"
-            className={`h-full w-full object-cover ${isOutOfStock ? "opacity-40 grayscale" : ""}`}
-          />
-          {primaryBadge && !isOutOfStock && (
-            <span className="absolute left-4 top-4 rounded-sm bg-primary px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_0_20px_-4px_oklch(0.58_0.22_25_/_0.9)]">
-              {primaryBadge}
-            </span>
-          )}
-          {isOutOfStock && (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/60 font-display text-sm font-bold uppercase tracking-widest text-destructive backdrop-blur-xs">
-              {t.product.outOfStock}
-            </span>
+        {/* Product Images */}
+        <div className="space-y-3">
+          <div className="relative overflow-hidden rounded-xl border border-border/60 bg-black aspect-square">
+            <img
+              src={selectedImage}
+              alt={product.name}
+              width={900}
+              height={900}
+              loading="eager"
+              className={`h-full w-full object-cover ${isOutOfStock ? "opacity-40 grayscale" : ""}`}
+            />
+            {primaryBadge && !isOutOfStock && (
+              <span
+                className="absolute left-4 top-4 rounded-sm border border-primary bg-primary px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-primary-foreground shadow-[0_0_20px_-4px_oklch(0.58_0.22_25_/_0.9)]"
+                style={badgeStyle}
+              >
+                {primaryBadge}
+              </span>
+            )}
+            {isOutOfStock && (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/60 font-display text-sm font-bold uppercase tracking-widest text-destructive backdrop-blur-xs">
+                {t.product.outOfStock}
+              </span>
+            )}
+          </div>
+          {galleryImages.length > 1 && (
+            <div className="grid grid-cols-5 gap-2">
+              {galleryImages.map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => setSelectedImage(image)}
+                  className={`aspect-square overflow-hidden rounded-lg border bg-black transition ${
+                    selectedImage === image ? "border-primary" : "border-border/60 hover:border-primary/60"
+                  }`}
+                >
+                  <img src={image} alt={`${product.name} ${index + 1}`} className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
           )}
         </div>
 

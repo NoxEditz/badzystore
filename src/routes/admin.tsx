@@ -769,9 +769,13 @@ function ProductForm({
   const [oldPrice, setOldPrice] = useState(product?.oldPrice ?? 0);
   const [stock, setStock] = useState(product?.stock ?? 10);
   const [image, setImage] = useState(product?.image ?? "");
+  const [images, setImages] = useState((product?.images ?? [product?.image ?? ""]).filter(Boolean).join(", "));
   const [desc, setDesc] = useState(product?.shortDesc ?? "");
   const [descAr, setDescAr] = useState(product?.shortDescAr ?? "");
   const [badge, setBadge] = useState(product?.badge ?? "");
+  const [badgeColor, setBadgeColor] = useState(product?.badgeColor ?? "#7c3aed");
+  const [badgeTextColor, setBadgeTextColor] = useState(product?.badgeTextColor ?? "#ffffff");
+  const [badgeStyle, setBadgeStyle] = useState<Product["badgeStyle"]>(product?.badgeStyle ?? "solid");
   const [tags, setTags] = useState(
     (product?.tags?.length ? product.tags : [product?.category ?? "mice"]).join(", "),
   );
@@ -797,12 +801,23 @@ function ProductForm({
       rating: product?.rating ?? 5.0,
       reviews: product?.reviews ?? 0,
       image: image || "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800",
+      images: Array.from(
+        new Set(
+          images
+            .split(",")
+            .map((url) => url.trim())
+            .filter(Boolean),
+        ),
+      ),
       shortDesc: desc || "Gaming accessory",
       shortDescAr: descAr || undefined,
       specs: product?.specs ?? [],
       stock: Number(stock),
       tags: normalizedTags.length ? normalizedTags : [category],
       badge: badge.trim() || undefined,
+      badgeColor: badge.trim() ? badgeColor : undefined,
+      badgeTextColor: badge.trim() ? badgeTextColor : undefined,
+      badgeStyle: badge.trim() ? badgeStyle : undefined,
     };
     try {
       await saveProduct(p);
@@ -841,6 +856,14 @@ function ProductForm({
             onChange={(e) => setName(e.target.value)}
             className="admin-input"
           />
+        <Field label="Gallery Images (comma separated)">
+          <input
+            value={images}
+            onChange={(e) => setImages(e.target.value)}
+            placeholder="https://... , https://..."
+            className="admin-input"
+          />
+        </Field>
         </Field>
         <Field label="Name (AR)">
           <input
@@ -936,6 +959,22 @@ function ProductForm({
             Leave blank to allow automatic labels from discount, stock, and tags.
           </p>
         </Field>
+        <Field label="Badge Style">
+          <select value={badgeStyle} onChange={(e) => setBadgeStyle(e.target.value as Product["badgeStyle"])} className="admin-input">
+            <option value="solid">Solid</option>
+            <option value="outline">Outline</option>
+            <option value="glow">Glow</option>
+          </select>
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Badge Color">
+          <input type="color" value={badgeColor} onChange={(e) => setBadgeColor(e.target.value)} className="admin-input h-11 p-1" />
+        </Field>
+        <Field label="Badge Text Color">
+          <input type="color" value={badgeTextColor} onChange={(e) => setBadgeTextColor(e.target.value)} className="admin-input h-11 p-1" />
+        </Field>
         <Field label="Tags (comma separated)">
           <input
             value={tags}
@@ -979,6 +1018,10 @@ function CategoriesTab({
   const builtIn = CATEGORIES;
   const [label, setLabel] = useState("");
   const [labelAr, setLabelAr] = useState("");
+  const [emoji, setEmoji] = useState("");
+  const [image, setImage] = useState("");
+  const [visible, setVisible] = useState(true);
+  const [sortOrder, setSortOrder] = useState(0);
   const [saving, setSaving] = useState(false);
   const saveSettings = useServerFn(saveAdminStoreSettings);
 
@@ -1009,6 +1052,10 @@ function CategoriesTab({
         .replace(/^-|-$/g, ""),
       label: label.trim(),
       labelAr: labelAr.trim() || label.trim(),
+      emoji: emoji.trim() || undefined,
+      image: image.trim() || undefined,
+      visible,
+      sortOrder: Number(sortOrder) || 0,
     };
     const updated = [...settings.customCategories.filter((c) => c.id !== newCat.id), newCat];
     await persistCategories(updated);
@@ -1034,6 +1081,7 @@ function CategoriesTab({
               <div>
                 <p className="text-sm font-semibold">{c.label}</p>
                 <p className="text-xs text-muted-foreground">{c.labelAr}</p>
+            {c.emoji && <p className="text-xs">{c.emoji}</p>}
               </div>
               <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground uppercase">
                 {c.id}
@@ -1057,6 +1105,7 @@ function CategoriesTab({
                 <div>
                   <p className="text-sm font-semibold">{c.label}</p>
                   <p className="text-xs text-muted-foreground">{c.labelAr}</p>
+            {c.emoji && <p className="text-xs">{c.emoji}</p>}
                 </div>
                 <button
                   disabled={saving}
@@ -1094,6 +1143,18 @@ function CategoriesTab({
                 className="admin-input"
               />
             </Field>
+            <Field label="Emoji / Icon">
+              <input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="🖱️" className="admin-input" />
+            </Field>
+            <Field label="Image URL">
+              <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..." className="admin-input" />
+            </Field>
+            <Field label="Sort Order">
+              <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="admin-input" />
+            </Field>
+            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} /> Visible in storefront
+            </label>
           </div>
           <button
             type="submit"
@@ -1352,6 +1413,15 @@ function SettingsTab({
   const [savingSettings, setSavingSettings] = useState(false);
   const saveSettings = useServerFn(saveAdminStoreSettings);
 
+  const updateAnnouncementItem = (id: string, changes: Partial<StoreSettings["announcementItems"][number]>) => {
+    setSettings({
+      ...settings,
+      announcementItems: settings.announcementItems.map((item) =>
+        item.id === id ? { ...item, ...changes } : item,
+      ),
+    });
+  };
+
   useEffect(() => {
     let cancelled = false;
     setLoadingSettings(true);
@@ -1520,6 +1590,53 @@ function SettingsTab({
                 className="admin-input"
               />
             </Field>
+          </div>
+
+          <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display text-lg font-bold">Announcement Items</h3>
+                <p className="text-xs text-muted-foreground">Add multiple rotating banner items shown on the storefront.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setSettings({
+                    ...settings,
+                    announcementItems: [
+                      ...settings.announcementItems,
+                      { id: `announcement-${Date.now()}`, textEn: "New announcement", textAr: "إعلان جديد", enabled: true },
+                    ],
+                  })
+                }
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-4 text-xs font-semibold hover:bg-secondary"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Item
+              </button>
+            </div>
+            <div className="space-y-3">
+              {settings.announcementItems.map((item) => (
+                <div key={item.id} className="grid gap-3 rounded-lg border border-border/60 bg-background p-3 sm:grid-cols-2">
+                  <input className="admin-input" value={item.textEn} onChange={(e) => updateAnnouncementItem(item.id, { textEn: e.target.value })} placeholder="English text" />
+                  <input className="admin-input" value={item.textAr} onChange={(e) => updateAnnouncementItem(item.id, { textAr: e.target.value })} placeholder="النص بالعربي" dir="rtl" />
+                  <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <input type="checkbox" checked={item.enabled} onChange={(e) => updateAnnouncementItem(item.id, { enabled: e.target.checked })} /> Enabled
+                  </label>
+                  <button
+                    type="button"
+                    className="justify-self-start text-xs font-semibold text-destructive hover:underline"
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        announcementItems: settings.announcementItems.filter((x) => x.id !== item.id),
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Hero Title (EN)">

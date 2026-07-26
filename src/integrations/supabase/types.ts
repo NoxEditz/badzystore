@@ -80,6 +80,9 @@ export type Database = {
       products: {
         Row: {
           badge: string | null
+          badge_color: string | null
+          badge_style: string | null
+          badge_text_color: string | null
           category: string
           created_at: string
           description: string | null
@@ -101,6 +104,9 @@ export type Database = {
         }
         Insert: {
           badge?: string | null
+          badge_color?: string | null
+          badge_style?: string | null
+          badge_text_color?: string | null
           category: string
           created_at?: string
           description?: string | null
@@ -122,6 +128,9 @@ export type Database = {
         }
         Update: {
           badge?: string | null
+          badge_color?: string | null
+          badge_style?: string | null
+          badge_text_color?: string | null
           category?: string
           created_at?: string
           description?: string | null

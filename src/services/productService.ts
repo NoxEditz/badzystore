@@ -14,13 +14,32 @@ type ProductRow = {
   rating?: number | string | null;
   reviews_count?: number | string | null;
   image: string;
+  images?: string[] | null;
   description?: string | null;
   description_ar?: string | null;
-  specs?: string[] | null;
+  specs?: unknown;
   stock?: number | string | null;
   tags?: string[] | null;
   badge?: Product["badge"];
+  badge_color?: string | null;
+  badge_text_color?: string | null;
+  badge_style?: Product["badgeStyle"] | null;
 };
+
+function normalizeSpecs(value: unknown): Product["specs"] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (item && typeof item === "object") {
+        const source = item as { label?: unknown; value?: unknown };
+        const label = String(source.label || "").trim();
+        const specValue = String(source.value || "").trim();
+        if (label && specValue) return { label, value: specValue };
+      }
+      return null;
+    })
+    .filter((item): item is { label: string; value: string } => item !== null);
+}
 
 function getLocalProducts(): Product[] {
   if (typeof window === "undefined") return INITIAL_PRODUCTS;
@@ -58,12 +77,16 @@ export async function getProducts(): Promise<Product[]> {
           rating: Number(item.rating || 5.0),
           reviews: Number(item.reviews_count || 0),
           image: item.image,
+          images: item.images || (item.image ? [item.image] : []),
           shortDesc: item.description || "",
-          shortDescAr: item.description_ar,
-          specs: item.specs || [],
+          shortDescAr: item.description_ar || undefined,
+          specs: normalizeSpecs(item.specs),
           stock: Number(item.stock || 0),
           tags: item.tags || [],
           badge: item.badge,
+          badgeColor: item.badge_color || undefined,
+          badgeTextColor: item.badge_text_color || undefined,
+          badgeStyle: item.badge_style || undefined,
         }));
       }
     } catch (e) {
@@ -114,7 +137,7 @@ export async function saveProduct(product: Product): Promise<Product> {
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const { error } = await supabase.from("products").upsert({
+      const payload = {
         id: product.id,
         slug: product.slug,
         name: product.name,
@@ -125,11 +148,16 @@ export async function saveProduct(product: Product): Promise<Product> {
         old_price_egp: product.oldPrice,
         category: product.category,
         image: product.image,
+        images: product.images || [product.image].filter(Boolean),
         stock: product.stock,
         badge: product.badge,
+        badge_color: product.badgeColor,
+        badge_text_color: product.badgeTextColor,
+        badge_style: product.badgeStyle,
         specs: product.specs,
         tags: product.tags,
-      });
+      };
+      const { error } = await supabase.from("products").upsert(payload as never);
       if (error) throw error;
     } catch (e) {
       console.error("Supabase product save error:", e);

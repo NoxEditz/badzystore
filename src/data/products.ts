@@ -17,13 +17,21 @@ import webcamImg from "@/assets/products/webcam.jpg";
 export type Category =
   "mice" | "keyboards" | "headsets" | "rgb" | "streaming" | "seating" | (string & {});
 
-export const CATEGORIES: { id: Category; label: string; labelAr: string }[] = [
-  { id: "mice", label: "Mice", labelAr: "ماوسات" },
-  { id: "keyboards", label: "Keyboards", labelAr: "كيبوردات" },
-  { id: "headsets", label: "Headsets", labelAr: "سماعات" },
-  { id: "rgb", label: "RGB & Setup", labelAr: "إضاءة وتجهيزات" },
-  { id: "streaming", label: "Streaming", labelAr: "بث وميكروفونات" },
-  { id: "seating", label: "Seating", labelAr: "كراسي ألعاب" },
+export const CATEGORIES: {
+  id: Category;
+  label: string;
+  labelAr: string;
+  emoji?: string;
+  image?: string;
+  visible?: boolean;
+  sortOrder?: number;
+}[] = [
+  { id: "mice", label: "Mice", labelAr: "ماوسات", emoji: "🖱️", visible: true, sortOrder: 10 },
+  { id: "keyboards", label: "Keyboards", labelAr: "كيبوردات", emoji: "⌨️", visible: true, sortOrder: 20 },
+  { id: "headsets", label: "Headsets", labelAr: "سماعات", emoji: "🎧", visible: true, sortOrder: 30 },
+  { id: "rgb", label: "RGB & Setup", labelAr: "إضاءة وتجهيزات", emoji: "🌈", visible: true, sortOrder: 40 },
+  { id: "streaming", label: "Streaming", labelAr: "بث وميكروفونات", emoji: "🎙️", visible: true, sortOrder: 50 },
+  { id: "seating", label: "Seating", labelAr: "كراسي ألعاب", emoji: "🪑", visible: true, sortOrder: 60 },
 ];
 
 export type ProductReview = {
@@ -46,12 +54,16 @@ export type Product = {
   rating: number;
   reviews: number;
   image: string;
+  images?: string[];
   shortDesc: string;
   shortDescAr?: string;
   specs: { label: string; value: string }[];
   stock: number;
   tags: string[];
   badge?: string;
+  badgeColor?: string;
+  badgeTextColor?: string;
+  badgeStyle?: "solid" | "outline" | "glow";
   sampleReviews?: ProductReview[];
 };
 

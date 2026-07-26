@@ -7,7 +7,7 @@ import { formatEGP } from "@/lib/currency";
 import { useLang } from "@/store/lang";
 import { DICTIONARY } from "@/lib/i18n";
 import { toast } from "sonner";
-import { getPrimaryProductBadge } from "@/services/catalogService";
+import { getPrimaryProductBadge, getProductBadgeStyle } from "@/services/catalogService";
 import { getStoreSettings } from "@/services/settingsService";
 
 // Wishlist persisted to localStorage
@@ -73,6 +73,8 @@ export const ProductCard = memo(function ProductCard({
   const isLowStock = product.stock > 0 && product.stock <= getStoreSettings().lowStockThreshold;
 
   const primaryBadge = getPrimaryProductBadge(product);
+  const badgeStyle = getProductBadgeStyle(product);
+  const primaryImage = product.images?.[0] || product.image;
 
   const displayName = lang === "ar" && product.nameAr ? product.nameAr : product.name;
 
@@ -110,7 +112,7 @@ export const ProductCard = memo(function ProductCard({
       <Link to="/product/$slug" params={{ slug: product.slug }} className="block">
         <div className="relative aspect-square overflow-hidden bg-black/30">
           <img
-            src={product.image}
+            src={primaryImage}
             alt={product.name}
             width={900}
             height={900}
@@ -126,7 +128,10 @@ export const ProductCard = memo(function ProductCard({
 
           {/* Manual/automatic product badge */}
           {primaryBadge && !isOutOfStock && (
-            <span className="absolute left-2.5 top-2.5 z-20 rounded-md bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-[0_0_16px_-4px_oklch(0.58_0.22_25_/_0.9)]">
+            <span
+              className="absolute left-2.5 top-2.5 z-20 rounded-md border border-primary bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-[0_0_16px_-4px_oklch(0.58_0.22_25_/_0.9)]"
+              style={badgeStyle}
+            >
               {primaryBadge}
             </span>
           )}
