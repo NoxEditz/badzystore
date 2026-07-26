@@ -74,7 +74,7 @@ import {
   deleteAdminProduct,
   saveAdminStoreSettings,
 } from "@/lib/admin.functions";
-import { getAdminOrders, updateAdminOrderStatus } from "@/lib/orders.functions";
+import { clearAdminOrders, getAdminOrders, updateAdminOrderStatus } from "@/lib/orders.functions";
 
 
 function AdminPage() {
@@ -371,6 +371,8 @@ function StatCard({
 function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => void }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [clearingOrders, setClearingOrders] = useState(false);
+  const clearOrders = useServerFn(clearAdminOrders);
 
   const filtered = useMemo(() => {
     let list =
@@ -423,6 +425,30 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
     toast.success("Orders exported as CSV!");
   };
 
+  const handleClearOrders = async () => {
+    if (orders.length === 0 || clearingOrders) return;
+
+    const confirmed = window.confirm(
+      `This will permanently delete ${orders.length} order${orders.length === 1 ? "" : "s"} from Supabase. Continue?`,
+    );
+    if (!confirmed) return;
+
+    setClearingOrders(true);
+    try {
+      const result = await clearOrders();
+      toast.success(`Deleted ${result.deletedCount} order${result.deletedCount === 1 ? "" : "s"}.`);
+      setFilter("all");
+      setSearch("");
+      onRefresh();
+    } catch (error: unknown) {
+      toast.error(
+        `Clear failed: ${error instanceof Error ? error.message : "Supabase rejected the delete request"}`,
+      );
+    } finally {
+      setClearingOrders(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -460,6 +486,13 @@ function OrdersTab({ orders, onRefresh }: { orders: Order[]; onRefresh: () => vo
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-semibold transition hover:bg-secondary"
           >
             <Download className="h-3.5 w-3.5" /> Export CSV
+          </button>
+          <button
+            onClick={handleClearOrders}
+            disabled={orders.length === 0 || clearingOrders}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 text-xs font-semibold text-destructive transition hover:bg-destructive/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> {clearingOrders ? "Clearing..." : "Clear Orders"}
           </button>
         </div>
       </div>

@@ -223,3 +223,17 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+export const clearAdminOrders = createServerFn({ method: "POST" }).handler(async () => {
+  const { requireAdmin } = await import("./admin.server");
+  await requireAdmin();
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { count, error } = await supabaseAdmin
+    .from("orders")
+    .delete({ count: "exact" })
+    .neq("id", "");
+
+  if (error) throw error;
+  return { ok: true, deletedCount: count ?? 0 };
+});
