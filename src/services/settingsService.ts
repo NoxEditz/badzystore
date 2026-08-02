@@ -35,6 +35,39 @@ export type StoreSettings = {
   heroSecondaryCta: string;
   trustCards: TrustCard[];
   customCategories: StoreCategory[];
+  // Footer content
+  footerDescriptionEn: string;
+  footerDescriptionAr: string;
+  footerCopyrightEn: string;
+  footerCopyrightAr: string;
+  footerTaglineEn: string;
+  footerTaglineAr: string;
+  // Homepage stats
+  statsDeliverySpeedEn: string;
+  statsDeliverySpeedAr: string;
+  statsDeliverySpeedLabelEn: string;
+  statsDeliverySpeedLabelAr: string;
+  statsDeliveryScopeEn: string;
+  statsDeliveryScopeAr: string;
+  statsDeliveryScopeLabelEn: string;
+  statsDeliveryScopeLabelAr: string;
+  // Delivery estimates
+  deliveryEstimateTitleEn: string;
+  deliveryEstimateTitleAr: string;
+  deliveryCairoAlexEn: string;
+  deliveryCairoAlexAr: string;
+  deliveryRestEgyptEn: string;
+  deliveryRestEgyptAr: string;
+  // Other content
+  reviewsPlaceholderEn: string;
+  reviewsPlaceholderAr: string;
+  storeLocationEn: string;
+  storeLocationAr: string;
+  seoDescriptionEn: string;
+  seoDescriptionAr: string;
+  seoKeywords: string;
+  storeNameEn: string;
+  storeNameAr: string;
 };
 
 export type AnnouncementItem = {
@@ -160,6 +193,41 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
     },
   ],
   customCategories: [],
+  // Footer content
+  footerDescriptionEn:
+    "Badzy Store — Egypt's premier gaming accessories and setup gear provider. Dark aesthetics, tuned for speed.",
+  footerDescriptionAr: "متجر بادزي ستور — وجهتك الأولى لمعدات القيمنق والإضاءة في مصر. جودة عالية وتوصيل سريع لكل المحافظات.",
+  footerCopyrightEn: "© {year} Badzy Store Egypt. All rights reserved.",
+  footerCopyrightAr: "© {year} بادزي ستور مصر. جميع الحقوق محفوظة.",
+  footerTaglineEn: "Built for real Egyptian gamers.",
+  footerTaglineAr: "مصمم للاعبين المصريين.",
+  // Homepage stats
+  statsDeliverySpeedEn: "24h",
+  statsDeliverySpeedAr: "24h",
+  statsDeliverySpeedLabelEn: "Fastest delivery",
+  statsDeliverySpeedLabelAr: "توصيل أسرع",
+  statsDeliveryScopeEn: "Egypt",
+  statsDeliveryScopeAr: "مصر",
+  statsDeliveryScopeLabelEn: "Nationwide",
+  statsDeliveryScopeLabelAr: "توصيل لكل محافظة",
+  // Delivery estimates
+  deliveryEstimateTitleEn: "Estimated Delivery Times",
+  deliveryEstimateTitleAr: "مواعيد التوصيل المتوقعة",
+  deliveryCairoAlexEn: "Alexandria & Cairo: 1–2 Business Days",
+  deliveryCairoAlexAr: "الإسكندرية والقاهرة: 1–2 يوم عمل",
+  deliveryRestEgyptEn: "Rest of Egypt: 3–5 Business Days",
+  deliveryRestEgyptAr: "باقي محافظات مصر: 3–5 أيام عمل",
+  // Other content
+  reviewsPlaceholderEn: "Rated 4.8 / 5 stars based on customer feedback across Egypt.",
+  reviewsPlaceholderAr: "تقييم 4.8 / 5 نجوم بناءً على آراء العملاء في مصر.",
+  storeLocationEn: "Alexandria & Cairo, Egypt",
+  storeLocationAr: "الإسكندرية والقاهرة، مصر",
+  seoDescriptionEn:
+    "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
+  seoDescriptionAr: "تسوق الفئران، لوحات المفاتيح الميكانيكية، إكسسوارات RGB ومعدات البث في متجر بادزي. توصيل سريع في جميع أنحاء مصر.",
+  seoKeywords: "gaming gear, mice, keyboards, RGB, streaming, Badzy Store, Egypt gaming",
+  storeNameEn: "Badzy Store",
+  storeNameAr: "بادزي ستور",
 };
 
 export function normalizeStoreCategories(value: unknown): StoreCategory[] {
@@ -275,6 +343,39 @@ export function normalizeStoreSettings(value: unknown): StoreSettings {
     heroSecondaryCta: source.heroSecondaryCta || DEFAULT_STORE_SETTINGS.heroSecondaryCta,
     trustCards: normalizeTrustCards(source.trustCards),
     customCategories: normalizeStoreCategories(source.customCategories),
+    // Footer content
+    footerDescriptionEn: source.footerDescriptionEn || DEFAULT_STORE_SETTINGS.footerDescriptionEn,
+    footerDescriptionAr: source.footerDescriptionAr || DEFAULT_STORE_SETTINGS.footerDescriptionAr,
+    footerCopyrightEn: source.footerCopyrightEn || DEFAULT_STORE_SETTINGS.footerCopyrightEn,
+    footerCopyrightAr: source.footerCopyrightAr || DEFAULT_STORE_SETTINGS.footerCopyrightAr,
+    footerTaglineEn: source.footerTaglineEn || DEFAULT_STORE_SETTINGS.footerTaglineEn,
+    footerTaglineAr: source.footerTaglineAr || DEFAULT_STORE_SETTINGS.footerTaglineAr,
+    // Homepage stats
+    statsDeliverySpeedEn: source.statsDeliverySpeedEn || DEFAULT_STORE_SETTINGS.statsDeliverySpeedEn,
+    statsDeliverySpeedAr: source.statsDeliverySpeedAr || DEFAULT_STORE_SETTINGS.statsDeliverySpeedAr,
+    statsDeliverySpeedLabelEn: source.statsDeliverySpeedLabelEn || DEFAULT_STORE_SETTINGS.statsDeliverySpeedLabelEn,
+    statsDeliverySpeedLabelAr: source.statsDeliverySpeedLabelAr || DEFAULT_STORE_SETTINGS.statsDeliverySpeedLabelAr,
+    statsDeliveryScopeEn: source.statsDeliveryScopeEn || DEFAULT_STORE_SETTINGS.statsDeliveryScopeEn,
+    statsDeliveryScopeAr: source.statsDeliveryScopeAr || DEFAULT_STORE_SETTINGS.statsDeliveryScopeAr,
+    statsDeliveryScopeLabelEn: source.statsDeliveryScopeLabelEn || DEFAULT_STORE_SETTINGS.statsDeliveryScopeLabelEn,
+    statsDeliveryScopeLabelAr: source.statsDeliveryScopeLabelAr || DEFAULT_STORE_SETTINGS.statsDeliveryScopeLabelAr,
+    // Delivery estimates
+    deliveryEstimateTitleEn: source.deliveryEstimateTitleEn || DEFAULT_STORE_SETTINGS.deliveryEstimateTitleEn,
+    deliveryEstimateTitleAr: source.deliveryEstimateTitleAr || DEFAULT_STORE_SETTINGS.deliveryEstimateTitleAr,
+    deliveryCairoAlexEn: source.deliveryCairoAlexEn || DEFAULT_STORE_SETTINGS.deliveryCairoAlexEn,
+    deliveryCairoAlexAr: source.deliveryCairoAlexAr || DEFAULT_STORE_SETTINGS.deliveryCairoAlexAr,
+    deliveryRestEgyptEn: source.deliveryRestEgyptEn || DEFAULT_STORE_SETTINGS.deliveryRestEgyptEn,
+    deliveryRestEgyptAr: source.deliveryRestEgyptAr || DEFAULT_STORE_SETTINGS.deliveryRestEgyptAr,
+    // Other content
+    reviewsPlaceholderEn: source.reviewsPlaceholderEn || DEFAULT_STORE_SETTINGS.reviewsPlaceholderEn,
+    reviewsPlaceholderAr: source.reviewsPlaceholderAr || DEFAULT_STORE_SETTINGS.reviewsPlaceholderAr,
+    storeLocationEn: source.storeLocationEn || DEFAULT_STORE_SETTINGS.storeLocationEn,
+    storeLocationAr: source.storeLocationAr || DEFAULT_STORE_SETTINGS.storeLocationAr,
+    seoDescriptionEn: source.seoDescriptionEn || DEFAULT_STORE_SETTINGS.seoDescriptionEn,
+    seoDescriptionAr: source.seoDescriptionAr || DEFAULT_STORE_SETTINGS.seoDescriptionAr,
+    seoKeywords: source.seoKeywords || DEFAULT_STORE_SETTINGS.seoKeywords,
+    storeNameEn: source.storeNameEn || DEFAULT_STORE_SETTINGS.storeNameEn,
+    storeNameAr: source.storeNameAr || DEFAULT_STORE_SETTINGS.storeNameAr,
   };
 }
 

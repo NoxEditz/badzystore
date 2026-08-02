@@ -167,8 +167,14 @@ function Home() {
                   value: `${(totalReviews / 1000).toFixed(1)}K+`,
                   label: lang === "ar" ? "تقييم" : "Reviews",
                 },
-                { value: "24h", label: lang === "ar" ? "توصيل أسرع" : "Fastest delivery" },
-                { value: "Egypt", label: lang === "ar" ? "توصيل لكل محافظة" : "Nationwide" },
+                { 
+                  value: lang === "ar" ? settings.statsDeliverySpeedAr : settings.statsDeliverySpeedEn, 
+                  label: lang === "ar" ? settings.statsDeliverySpeedLabelAr : settings.statsDeliverySpeedLabelEn 
+                },
+                { 
+                  value: lang === "ar" ? settings.statsDeliveryScopeAr : settings.statsDeliveryScopeEn, 
+                  label: lang === "ar" ? settings.statsDeliveryScopeLabelAr : settings.statsDeliveryScopeLabelEn 
+                },
               ].map((stat) => (
                 <div key={stat.label} className="flex flex-col">
                   <span className="font-display text-2xl font-bold text-primary">{stat.value}</span>

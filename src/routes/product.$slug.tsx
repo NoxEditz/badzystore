@@ -331,16 +331,16 @@ function ProductPage() {
           <div className="mt-6 rounded-lg border border-border/60 bg-card/60 p-4 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider">
               <MapPin className="h-4 w-4 text-primary" />
-              <span>{t.product.deliveryEstimateTitle}</span>
+              <span>{lang === "ar" ? settings.deliveryEstimateTitleAr : settings.deliveryEstimateTitleEn}</span>
             </div>
             <ul className="text-xs text-muted-foreground space-y-1">
               <li className="flex items-center gap-2">
                 <Clock className="h-3.5 w-3.5 text-emerald-400" />
-                <span>{t.product.cairoAlex}</span>
+                <span>{lang === "ar" ? settings.deliveryCairoAlexAr : settings.deliveryCairoAlexEn}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Clock className="h-3.5 w-3.5 text-primary" />
-                <span>{t.product.restEgypt}</span>
+                <span>{lang === "ar" ? settings.deliveryRestEgyptAr : settings.deliveryRestEgyptEn}</span>
               </li>
             </ul>
           </div>
@@ -393,7 +393,7 @@ function ProductPage() {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Rated 4.8 / 5 stars based on customer feedback across Egypt.
+            {lang === "ar" ? settings.reviewsPlaceholderAr : settings.reviewsPlaceholderEn}
           </p>
         )}
       </section>

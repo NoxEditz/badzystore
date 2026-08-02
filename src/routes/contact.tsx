@@ -8,6 +8,7 @@ import {
   type StoreSettings,
 } from "@/services/settingsService";
 import { useEffect, useState } from "react";
+import { useLang } from "@/store/lang";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
+  const { lang } = useLang();
   const [settings, setSettings] = useState(() => getStoreSettings());
 
   useEffect(() => {
@@ -71,7 +73,7 @@ function ContactPage() {
             )}
             <div className="flex items-center gap-3">
               <MapPin className="h-4 w-4 text-primary" />
-              <span>Alexandria & Cairo, Egypt</span>
+              <span>{lang === "ar" ? settings.storeLocationAr : settings.storeLocationEn}</span>
             </div>
           </div>
         </div>
