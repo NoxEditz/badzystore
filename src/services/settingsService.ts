@@ -30,6 +30,9 @@ export type StoreSettings = {
   trendingEyebrowAr: string;
   trendingTitleEn: string;
   trendingTitleAr: string;
+  featuredEnabled: boolean;
+  trendingEnabled: boolean;
+  heroSecondaryCta: string;
   trustCards: TrustCard[];
   customCategories: StoreCategory[];
 };
@@ -119,6 +122,9 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   trendingEyebrowAr: "الأكثر طلباً",
   trendingTitleEn: "What players are grabbing.",
   trendingTitleAr: "المنتجات الأكثر مبيعاً في مصر.",
+  featuredEnabled: true,
+  trendingEnabled: true,
+  heroSecondaryCta: "rgb",
   trustCards: [
     {
       id: "secure-checkout",
@@ -264,6 +270,9 @@ export function normalizeStoreSettings(value: unknown): StoreSettings {
     trendingEyebrowAr: source.trendingEyebrowAr || DEFAULT_STORE_SETTINGS.trendingEyebrowAr,
     trendingTitleEn: source.trendingTitleEn || DEFAULT_STORE_SETTINGS.trendingTitleEn,
     trendingTitleAr: source.trendingTitleAr || DEFAULT_STORE_SETTINGS.trendingTitleAr,
+    featuredEnabled: source.featuredEnabled !== false,
+    trendingEnabled: source.trendingEnabled !== false,
+    heroSecondaryCta: source.heroSecondaryCta || DEFAULT_STORE_SETTINGS.heroSecondaryCta,
     trustCards: normalizeTrustCards(source.trustCards),
     customCategories: normalizeStoreCategories(source.customCategories),
   };

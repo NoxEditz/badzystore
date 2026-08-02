@@ -143,16 +143,20 @@ function Home() {
                 <span className="relative">{t.hero.ctaShop}</span>
                 <ArrowRight className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 ltr:inline rtl:rotate-180" />
               </Link>
-              <Link
-                to="/shop"
-                search={{ cat: "rgb" }}
-                className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-background/60 px-6 text-sm font-semibold text-foreground backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
-              >
-                {t.hero.ctaRgb}
-                <span className="text-primary transition-transform duration-300 group-hover:rotate-90">
-                  +
-                </span>
-              </Link>
+              {categories.find(c => c.id === settings.heroSecondaryCta && c.visible !== false) && (
+                <Link
+                  to="/shop"
+                  search={{ cat: settings.heroSecondaryCta }}
+                  className="group inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-background/60 px-6 text-sm font-semibold text-foreground backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                >
+                  {lang === "ar" 
+                    ? categories.find(c => c.id === settings.heroSecondaryCta)?.labelAr 
+                    : categories.find(c => c.id === settings.heroSecondaryCta)?.label}
+                  <span className="text-primary transition-transform duration-300 group-hover:rotate-90">
+                    +
+                  </span>
+                </Link>
+              )}
             </Reveal>
 
             {/* Stats strip inline in hero */}
@@ -280,52 +284,56 @@ function Home() {
       </section>
 
       {/* ── Featured ── */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <Reveal className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              {lang === "ar" ? settings.featuredEyebrowAr : settings.featuredEyebrowEn}
-            </p>
-            <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              {lang === "ar" ? settings.featuredTitleAr : settings.featuredTitleEn}
-            </h2>
+      {settings.featuredEnabled && featured.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <Reveal className="mb-8 flex items-end justify-between gap-4">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
+                {lang === "ar" ? settings.featuredEyebrowAr : settings.featuredEyebrowEn}
+              </p>
+              <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                {lang === "ar" ? settings.featuredTitleAr : settings.featuredTitleEn}
+              </h2>
+            </div>
+          </Reveal>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {featured.map((p, i) => (
+              <Reveal key={p.id} delay={i * 80}>
+                <ProductCard product={p} priority={i < 2} />
+              </Reveal>
+            ))}
           </div>
-        </Reveal>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {featured.map((p, i) => (
-            <Reveal key={p.id} delay={i * 80}>
-              <ProductCard product={p} priority={i < 2} />
-            </Reveal>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Trending ── */}
-      <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
-        <Reveal className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              {lang === "ar" ? settings.trendingEyebrowAr : settings.trendingEyebrowEn}
-            </p>
-            <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              {lang === "ar" ? settings.trendingTitleAr : settings.trendingTitleEn}
-            </h2>
+      {settings.trendingEnabled && trending.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
+          <Reveal className="mb-8 flex items-end justify-between gap-4">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
+                {lang === "ar" ? settings.trendingEyebrowAr : settings.trendingEyebrowEn}
+              </p>
+              <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                {lang === "ar" ? settings.trendingTitleAr : settings.trendingTitleEn}
+              </h2>
+            </div>
+            <Link
+              to="/shop"
+              className="text-sm font-medium text-muted-foreground transition hover:text-primary"
+            >
+              {t.nav.shopAll} →
+            </Link>
+          </Reveal>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {trending.map((p, i) => (
+              <Reveal key={p.id} delay={(i % 4) * 70}>
+                <ProductCard product={p} />
+              </Reveal>
+            ))}
           </div>
-          <Link
-            to="/shop"
-            className="text-sm font-medium text-muted-foreground transition hover:text-primary"
-          >
-            {t.nav.shopAll} →
-          </Link>
-        </Reveal>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {trending.map((p, i) => (
-            <Reveal key={p.id} delay={(i % 4) * 70}>
-              <ProductCard product={p} />
-            </Reveal>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
     </>
   );
 }

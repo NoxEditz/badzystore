@@ -1916,6 +1916,22 @@ function SettingsTab({
                 className="admin-input"
               />
             </Field>
+            <Field label="Secondary CTA Button Category">
+              <select
+                value={settings.heroSecondaryCta}
+                onChange={(e) => setSettings({ ...settings, heroSecondaryCta: e.target.value })}
+                className="admin-input"
+              >
+                {mergeCategories(settings).filter(c => c.visible !== false).map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label} ({cat.labelAr})
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                The second button in hero (e.g., "Explore RGB"). Only shows if category is visible.
+              </p>
+            </Field>
           </div>
 
           <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
@@ -1964,6 +1980,28 @@ function SettingsTab({
               ))}
             </div>
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.featuredEnabled}
+                onChange={(e) => setSettings({ ...settings, featuredEnabled: e.target.checked })}
+                className="accent-primary h-4 w-4"
+              />
+              <span className="text-sm font-semibold">{isAr ? "إظهار قسم المنتجات المميزة" : "Show Featured Section"}</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.trendingEnabled}
+                onChange={(e) => setSettings({ ...settings, trendingEnabled: e.target.checked })}
+                className="accent-primary h-4 w-4"
+              />
+              <span className="text-sm font-semibold">{isAr ? "إظهار قسم المنتجات الرائجة" : "Show Trending Section"}</span>
+            </label>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Hero Title (EN)">
               <input
