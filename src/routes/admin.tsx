@@ -1253,7 +1253,7 @@ function CategoriesTab({
     e.preventDefault();
     if (!label.trim()) return;
     const newCat = {
-      id: label
+      id: editingId || label
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, ""),
