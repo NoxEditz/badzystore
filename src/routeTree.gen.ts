@@ -19,6 +19,7 @@ import { Route as ManageRouteImport } from './routes/manage'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as TestErrorRouteImport } from './routes/test-error'
 import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
@@ -74,6 +75,11 @@ const ShopRoute = ShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TestErrorRoute = TestErrorRouteImport.update({
+  id: '/test-error',
+  path: '/test-error',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WarrantyRoute = WarrantyRouteImport.update({
   id: '/warranty',
   path: '/warranty',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/returns': typeof ReturnsRoute
   '/search': typeof SearchRoute
   '/shop': typeof ShopRoute
+  '/test-error': typeof TestErrorRoute
   '/warranty': typeof WarrantyRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/returns': typeof ReturnsRoute
   '/search': typeof SearchRoute
   '/shop': typeof ShopRoute
+  '/test-error': typeof TestErrorRoute
   '/warranty': typeof WarrantyRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/returns': typeof ReturnsRoute
   '/search': typeof SearchRoute
   '/shop': typeof ShopRoute
+  '/test-error': typeof TestErrorRoute
   '/warranty': typeof WarrantyRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/returns'
     | '/search'
     | '/shop'
+    | '/test-error'
     | '/warranty'
     | '/checkout/success'
     | '/product/$slug'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/returns'
     | '/search'
     | '/shop'
+    | '/test-error'
     | '/warranty'
     | '/checkout/success'
     | '/product/$slug'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/returns'
     | '/search'
     | '/shop'
+    | '/test-error'
     | '/warranty'
     | '/checkout/success'
     | '/product/$slug'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   ReturnsRoute: typeof ReturnsRoute
   SearchRoute: typeof SearchRoute
   ShopRoute: typeof ShopRoute
+  TestErrorRoute: typeof TestErrorRoute
   WarrantyRoute: typeof WarrantyRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   ProductSlugRoute: typeof ProductSlugRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/test-error': {
+      id: '/test-error'
+      path: '/test-error'
+      fullPath: '/test-error'
+      preLoaderRoute: typeof TestErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/warranty': {
       id: '/warranty'
       path: '/warranty'
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReturnsRoute: ReturnsRoute,
   SearchRoute: SearchRoute,
   ShopRoute: ShopRoute,
+  TestErrorRoute: TestErrorRoute,
   WarrantyRoute: WarrantyRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   ProductSlugRoute: ProductSlugRoute,

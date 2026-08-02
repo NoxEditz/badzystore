@@ -32,6 +32,7 @@ import {
   getProductBadgeStyle,
   mergeCategories,
 } from "@/services/catalogService";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 
 const RECENTLY_VIEWED_KEY = "badzy_recently_viewed";
 
@@ -88,6 +89,9 @@ export const Route = createFileRoute("/product/$slug")({
     };
   },
   component: ProductPage,
+  errorComponent: ({ error, reset }) => (
+    <RouteErrorBoundary error={error} reset={reset} routeName="Product" />
+  ),
 });
 
 function ProductPage() {

@@ -48,6 +48,7 @@ import { formatEGP } from "@/lib/currency";
 import { toast } from "sonner";
 import { mergeCategories } from "@/services/catalogService";
 import { useLang } from "@/store/lang";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 
 /* ─────────────────────────────────────── Types ─────────────────────── */
 type AdminTab = "orders" | "products" | "categories" | "analytics" | "customers" | "settings";
@@ -61,6 +62,9 @@ export const Route = createFileRoute("/admin")({
     ],
   }),
   component: AdminPage,
+  errorComponent: ({ error, reset }) => (
+    <RouteErrorBoundary error={error} reset={reset} routeName="Admin Panel" />
+  ),
 });
 
 /* ─────────────────────────────────────── Auth Gate ─────────────────── */

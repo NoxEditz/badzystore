@@ -16,6 +16,7 @@ import { DICTIONARY } from "@/lib/i18n";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import { getProducts } from "@/services/productService";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 
 export const EGYPT_GOVERNORATES = [
   "Alexandria",
@@ -55,6 +56,9 @@ export const Route = createFileRoute("/checkout/")({
     ],
   }),
   component: CheckoutPage,
+  errorComponent: ({ error, reset }) => (
+    <RouteErrorBoundary error={error} reset={reset} routeName="Checkout" />
+  ),
 });
 
 function CheckoutPage() {
