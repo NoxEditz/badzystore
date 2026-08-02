@@ -66,11 +66,13 @@ export const ProductCard = memo(function ProductCard({
   const { lang } = useLang();
   const t = DICTIONARY[lang];
   const add = useCart((s) => s.add);
+  const cartQty = useCart((s) => s.lines.find((line) => line.id === product.id)?.qty ?? 0);
   const { wished, toggle: toggleWish } = useWishlist(product.id);
   const [cartBouncing, setCartBouncing] = useState(false);
   const [heartPopping, setHeartPopping] = useState(false);
 
   const isOutOfStock = product.stock <= 0;
+  const hasReachedStock = product.stock > 0 && cartQty >= product.stock;
   const isLowStock = product.stock > 0 && product.stock <= getStoreSettings().lowStockThreshold;
 
   const primaryBadge = getPrimaryProductBadge(product);
@@ -82,7 +84,7 @@ export const ProductCard = memo(function ProductCard({
   const handleAddToCart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      if (isOutOfStock) return;
+      if (isOutOfStock || hasReachedStock) return;
 
       trackEvent("add_to_cart", {
         currency: "EGP",
@@ -106,7 +108,7 @@ export const ProductCard = memo(function ProductCard({
         { duration: 2000 },
       );
     },
-    [add, product, isOutOfStock, displayName, lang],
+    [add, product, isOutOfStock, hasReachedStock, displayName, lang],
   );
 
   const handleWishlist = useCallback(
@@ -222,7 +224,7 @@ export const ProductCard = memo(function ProductCard({
 
           <button
             type="button"
-            disabled={isOutOfStock}
+            disabled={isOutOfStock || hasReachedStock}
             aria-label={`Add ${product.name} to cart`}
             onClick={handleAddToCart}
             className={`group/btn inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-all duration-200 hover:scale-110 hover:border-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-background ${

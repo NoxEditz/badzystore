@@ -102,7 +102,9 @@ function CartPage() {
                 >
                   {l.name}
                 </Link>
-                <div className="mt-1 text-xs text-muted-foreground font-display">{formatEGP(l.price, lang)}</div>
+                <div className="mt-1 text-xs text-muted-foreground font-display">
+                  {formatEGP(l.price, lang)}
+                </div>
                 <div className="mt-3 flex items-center gap-3">
                   <div className="inline-flex h-9 items-center rounded-md border border-border bg-background">
                     <button
@@ -115,12 +117,18 @@ function CartPage() {
                     <span className="w-6 text-center text-xs font-semibold">{l.qty}</span>
                     <button
                       onClick={() => setQty(l.id, l.qty + 1)}
-                      className="flex h-full w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+                      disabled={l.stock !== undefined && l.qty >= l.stock}
+                      className="flex h-full w-9 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-40"
                       aria-label="Increase"
                     >
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>
+                  {l.stock !== undefined && l.qty >= l.stock && (
+                    <p className="mt-2 text-[11px] font-medium text-amber-400">
+                      {lang === "ar" ? "وصلت للكمية المتاحة" : "Maximum available quantity in cart"}
+                    </p>
+                  )}
                   <button
                     onClick={() => remove(l.id)}
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition"
@@ -160,7 +168,9 @@ function CartPage() {
             <div className="my-3 border-t border-border/60" />
             <div className="flex justify-between text-base font-semibold">
               <dt>{t.checkout.total}</dt>
-              <dd className="font-display text-xl font-bold text-primary">{formatEGP(total, lang)}</dd>
+              <dd className="font-display text-xl font-bold text-primary">
+                {formatEGP(total, lang)}
+              </dd>
             </div>
           </dl>
 

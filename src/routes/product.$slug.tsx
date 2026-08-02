@@ -100,20 +100,29 @@ function ProductPage() {
   const { lang } = useLang();
   const t = DICTIONARY[lang];
   const add = useCart((s) => s.add);
+  const cartQty = useCart((s) => s.lines.find((line) => line.id === product.id)?.qty ?? 0);
 
   const [qty, setQty] = useState(1);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const galleryImages = product.images?.length ? product.images : [product.image];
-  const [selectedImage, setSelectedImage] = useState(galleryImages[0]);
+  const firstGalleryImage = galleryImages[0];
+  const [selectedImage, setSelectedImage] = useState(firstGalleryImage);
 
   const isOutOfStock = product.stock <= 0;
+  const availableToAdd = Math.max(0, product.stock - cartQty);
+  const cannotAddMore = isOutOfStock || availableToAdd <= 0;
   const isLowStock = product.stock > 0 && product.stock <= settings.lowStockThreshold;
   const primaryBadge = getPrimaryProductBadge(product, settings);
   const badgeStyle = getProductBadgeStyle(product);
 
   useEffect(() => {
-    setSelectedImage(galleryImages[0]);
-  }, [galleryImages[0], product.id]);
+    setSelectedImage(firstGalleryImage);
+  }, [firstGalleryImage, product.id]);
+
+  useEffect(() => {
+    if (isOutOfStock) return;
+    setQty((currentQty) => Math.min(currentQty, Math.max(1, availableToAdd)));
+  }, [availableToAdd, isOutOfStock]);
 
   // Track recently viewed products in localStorage
   useEffect(() => {
@@ -181,10 +190,16 @@ function ProductPage() {
                   type="button"
                   onClick={() => setSelectedImage(image)}
                   className={`aspect-square overflow-hidden rounded-lg border bg-black transition ${
-                    selectedImage === image ? "border-primary" : "border-border/60 hover:border-primary/60"
+                    selectedImage === image
+                      ? "border-primary"
+                      : "border-border/60 hover:border-primary/60"
                   }`}
                 >
-                  <img src={image} alt={`${product.name} ${index + 1}`} className="h-full w-full object-cover" />
+                  <img
+                    src={image}
+                    alt={`${product.name} ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -268,8 +283,8 @@ function ProductPage() {
                 <span className="w-8 text-center text-sm font-semibold">{qty}</span>
                 <button
                   type="button"
-                  disabled={isOutOfStock || qty >= product.stock}
-                  onClick={() => setQty((n) => Math.min(product.stock, n + 1))}
+                  disabled={cannotAddMore || qty >= availableToAdd}
+                  onClick={() => setQty((n) => Math.min(availableToAdd, n + 1))}
                   className="flex h-full w-11 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-40"
                   aria-label="Increase quantity"
                 >
@@ -279,9 +294,9 @@ function ProductPage() {
 
               <button
                 type="button"
-                disabled={isOutOfStock}
+                disabled={cannotAddMore}
                 onClick={() => {
-                  if (isOutOfStock) return;
+                  if (cannotAddMore) return;
                   add(product, qty);
                   toast.success(
                     `${qty} × ${lang === "ar" && product.nameAr ? product.nameAr : product.name} ${t.product.addToCart}`,
@@ -291,7 +306,11 @@ function ProductPage() {
               >
                 {isOutOfStock
                   ? t.product.outOfStock
-                  : `${t.product.addToCart} · ${formatEGP(product.price * qty, lang)}`}
+                  : cannotAddMore
+                    ? lang === "ar"
+                      ? "تمت إضافة كل الكمية المتاحة"
+                      : "All available stock is in your cart"
+                    : `${t.product.addToCart} · ${formatEGP(product.price * qty, lang)}`}
               </button>
             </div>
 
@@ -415,15 +434,21 @@ function ProductPage() {
         </div>
         <button
           type="button"
-          disabled={isOutOfStock}
+          disabled={cannotAddMore}
           onClick={() => {
-            if (isOutOfStock) return;
+            if (cannotAddMore) return;
             add(product, qty);
             toast.success(`${qty} × ${product.name} ${t.product.addToCart}`);
           }}
           className="h-10 rounded-md bg-primary px-5 text-xs font-semibold text-primary-foreground hover:brightness-110 disabled:opacity-40"
         >
-          {isOutOfStock ? t.product.outOfStock : t.product.addToCart}
+          {isOutOfStock
+            ? t.product.outOfStock
+            : cannotAddMore
+              ? lang === "ar"
+                ? "تمت إضافة المتاح"
+                : "Stock in cart"
+              : t.product.addToCart}
         </button>
       </div>
     </div>

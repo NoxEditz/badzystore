@@ -40,25 +40,43 @@ cp .env.example .env
 ```
 
 Required variables:
+
 - `VITE_SUPABASE_URL`: Your Supabase project URL.
 - `VITE_SUPABASE_PUBLISHABLE_KEY` (or `VITE_SUPABASE_ANON_KEY`): Your Supabase anonymous key.
-- `VITE_GA_MEASUREMENT_ID`: Google Analytics 4 Measurement ID (e.g., `G-XXXXXXXXXX`).
 - `VITE_STORE_DOMAIN`: The public URL of the store (e.g., `https://badzystore.com`).
+- `ADMIN_PASSKEY`: Password used to log into `/admin`.
+- `ADMIN_SESSION_SECRET`: Random 32+ character secret used to sign admin sessions.
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key used only by server-side order/admin functions.
+
+Optional variables:
+
+- `VITE_GA_MEASUREMENT_ID`: Google Analytics 4 Measurement ID (e.g., `G-XXXXXXXXXX`).
+- `VITE_META_PIXEL_ID`: Meta Pixel ID.
+- `VITE_TIKTOK_PIXEL_ID`: TikTok Pixel ID.
 
 ## Getting Started
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **Start the development server:**
+
    ```bash
    npm run dev
    ```
 
 3. **Build for production:**
+
    ```bash
+   npm run build
+   ```
+
+4. **Validate before shipping:**
+   ```bash
+   npm run lint
    npm run build
    ```
 
@@ -67,6 +85,7 @@ Required variables:
 After running the standard migrations in the Supabase SQL editor, you **must also** run `db/2026-07-26_server_side_orders_and_stock.sql`.
 
 This file:
+
 - Creates the atomic stock decrement function used during checkout.
 - Secures the `orders` table to service-role-only inserts (preventing client-side order manipulation).
 - Adds performance indexes on frequently queried columns.
@@ -85,9 +104,16 @@ This project is optimized for **Cloudflare Pages**.
 ## Admin Dashboard
 
 Access the admin dashboard at `/admin`.
-Authentication requires a passkey set in your Supabase configuration (custom logic depending on your setup). The dashboard allows you to:
+Authentication requires `ADMIN_PASSKEY` and `ADMIN_SESSION_SECRET` to be configured on the server/deployment environment. The dashboard allows you to:
+
 - Manage orders
 - Add/Edit/Delete products and manage stock levels
 - Upload product images to Supabase Storage
 - Manage custom categories
 - Adjust store settings (shipping fees, banners, trust cards, contact info)
+
+## Checkout and Stock Safety
+
+- The client cart caps quantities at known product stock for better UX.
+- Checkout still revalidates every cart line server-side and uses the service role plus database stock decrement function as the final source of truth.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSKEY`, or `ADMIN_SESSION_SECRET` through `VITE_` variables or client-side code.

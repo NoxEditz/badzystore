@@ -39,11 +39,16 @@ export function CartDrawer({ children }: { children?: React.ReactNode }) {
         )}
       </SheetTrigger>
 
-      <SheetContent side={lang === "ar" ? "left" : "right"} className="flex flex-col w-full sm:max-w-md bg-background text-foreground border-border">
+      <SheetContent
+        side={lang === "ar" ? "left" : "right"}
+        className="flex flex-col w-full sm:max-w-md bg-background text-foreground border-border"
+      >
         <SheetHeader className="border-b border-border pb-4">
           <SheetTitle className="flex items-center gap-2 font-display text-xl">
             <ShoppingCart className="h-5 w-5 text-primary" />
-            <span>{t.cart.title} ({count})</span>
+            <span>
+              {t.cart.title} ({count})
+            </span>
           </SheetTitle>
           {/* Free Shipping Progress */}
           <div className="mt-3 space-y-1.5 text-xs">
@@ -106,11 +111,17 @@ export function CartDrawer({ children }: { children?: React.ReactNode }) {
                         <button
                           type="button"
                           onClick={() => setQty(line.id, line.qty + 1)}
-                          className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                          disabled={line.stock !== undefined && line.qty >= line.stock}
+                          className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-40"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
+                      {line.stock !== undefined && line.qty >= line.stock && (
+                        <p className="text-[10px] font-medium text-amber-400">
+                          {lang === "ar" ? "الحد المتاح" : "Max available"}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -132,7 +143,9 @@ export function CartDrawer({ children }: { children?: React.ReactNode }) {
             <div className="border-t border-border pt-4 space-y-3">
               <div className="flex items-center justify-between text-base font-semibold">
                 <span>{t.cart.subtotal}</span>
-                <span className="font-display text-lg text-primary">{formatEGP(subtotal, lang)}</span>
+                <span className="font-display text-lg text-primary">
+                  {formatEGP(subtotal, lang)}
+                </span>
               </div>
               <p className="text-xs text-muted-foreground">{t.cart.shippingCalc}</p>
 
