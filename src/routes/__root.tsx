@@ -18,6 +18,7 @@ import { RouteLoadingScreen } from "../components/site/RouteLoadingScreen";
 import { useLang } from "../store/lang";
 import { useTheme } from "../store/theme";
 import { initAnalytics } from "../lib/analytics";
+import { fetchStoreSettings, getStoreSettings } from "../services/settingsService";
 
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
@@ -59,56 +60,69 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Badzy Store — Gaming gear built fast" },
-      {
-        name: "description",
-        content:
-          "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
-      },
-      { name: "keywords", content: "gaming gear, mice, keyboards, RGB, streaming, Badzy Store, Egypt gaming" },
-      { name: "author", content: "Badzy Store Egypt" },
-      { name: "theme-color", content: "#0e0e10" },
-      { property: "og:title", content: "Badzy Store — Gaming gear built fast" },
-      {
-        property: "og:description",
-        content:
-          "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
-      },
-      { property: "og:image", content: "/logo.png" },
-      { property: "og:url", content: `https://${CONFIG.storeDomain}` },
-      { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "Badzy Store" },
-      { property: "og:locale", content: "en_EG" },
-      { property: "og:locale:alternate", content: "ar_EG" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Badzy Store — Gaming gear built fast" },
-      {
-        name: "twitter:description",
-        content:
-          "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
-      },
-      { name: "twitter:image", content: "/logo.png" },
-    ],
-    links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&family=Cairo:wght@400;600;700&display=swap",
-      },
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
-      { rel: "icon", href: "/favicon-192.png", type: "image/png", sizes: "192x192" },
-      { rel: "apple-touch-icon", href: "/favicon-192.png", sizes: "180x180" },
-    ],
-  }),
+  loader: async () => {
+    try {
+      const settings = await fetchStoreSettings();
+      return { settings };
+    } catch (error) {
+      console.error("Failed to load settings in root", error);
+      return { settings: getStoreSettings() };
+    }
+  },
+  head: ({ loaderData }) => {
+    const settings = loaderData?.settings;
+    const storeName = settings?.storeNameEn || "Badzy Store";
+    const seoDesc = settings?.seoDescriptionEn || "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.";
+    const seoKeywords = settings?.seoKeywords || "gaming gear, mice, keyboards, RGB, streaming, Badzy Store, Egypt gaming";
+    
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: `${storeName} — Gaming gear built fast` },
+        {
+          name: "description",
+          content: seoDesc,
+        },
+        { name: "keywords", content: seoKeywords },
+        { name: "author", content: `${storeName} Egypt` },
+        { name: "theme-color", content: "#0e0e10" },
+        { property: "og:title", content: `${storeName} — Gaming gear built fast` },
+        {
+          property: "og:description",
+          content: seoDesc,
+        },
+        { property: "og:image", content: "/logo.png" },
+        { property: "og:url", content: `https://${CONFIG.storeDomain}` },
+        { property: "og:type", content: "website" },
+        { property: "og:site_name", content: storeName },
+        { property: "og:locale", content: "en_EG" },
+        { property: "og:locale:alternate", content: "ar_EG" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: `${storeName} — Gaming gear built fast` },
+        {
+          name: "twitter:description",
+          content: seoDesc,
+        },
+        { name: "twitter:image", content: "/logo.png" },
+      ],
+      links: [
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&family=Cairo:wght@400;600;700&display=swap",
+        },
+        {
+          rel: "stylesheet",
+          href: appCss,
+        },
+        { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+        { rel: "icon", href: "/favicon-192.png", type: "image/png", sizes: "192x192" },
+        { rel: "apple-touch-icon", href: "/favicon-192.png", sizes: "180x180" },
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   errorComponent: ErrorComponent,
@@ -124,7 +138,6 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body>
           {children}
-          <Toaster theme={theme as any} className="toaster group" />
           <Scripts />
       </body>
     </html>
@@ -133,7 +146,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const loaderData = Route.useLoaderData();
   const { theme } = useTheme();
+  const storeName = loaderData?.settings?.storeNameEn || "Badzy Store";
 
   useEffect(() => {
     initAnalytics();
@@ -152,9 +167,9 @@ function RootComponent() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         originalTitle = document.title;
-        document.title = "🥺 Don't forget us! - Badzy Store";
+        document.title = `🥺 Don't forget us! - ${storeName}`;
       } else {
-        document.title = originalTitle || "Badzy Store — Gaming gear built fast";
+        document.title = originalTitle || `${storeName} — Gaming gear built fast`;
       }
     };
     
@@ -162,7 +177,7 @@ function RootComponent() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [storeName]);
 
   return (
     <QueryClientProvider client={queryClient}>

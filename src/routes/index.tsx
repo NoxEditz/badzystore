@@ -23,23 +23,27 @@ export const Route = createFileRoute("/")({
     const [products, settings] = await Promise.all([getProducts(), fetchStoreSettings()]);
     return { products, categories: mergeCategories(settings), settings };
   },
-  head: () => ({
-    meta: [
-      { title: "Badzy Store — Gaming gear built fast" },
-      {
-        name: "description",
-        content:
-          "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
-      },
-      { property: "og:title", content: "Badzy Store — Gaming gear built fast" },
-      {
-        property: "og:description",
-        content:
-          "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.",
-      },
-    ],
-    links: [{ rel: "preload", as: "image", href: heroImg, fetchPriority: "high" } as never],
-  }),
+  head: ({ loaderData }) => {
+    const settings = loaderData?.settings;
+    const storeName = settings?.storeNameEn || "Badzy Store";
+    const seoDesc = settings?.seoDescriptionEn || "Shop mice, mechanical keyboards, RGB accessories and streaming gear at Badzy Store. Fast delivery across Egypt.";
+    
+    return {
+      meta: [
+        { title: `${storeName} — Gaming gear built fast` },
+        {
+          name: "description",
+          content: seoDesc,
+        },
+        { property: "og:title", content: `${storeName} — Gaming gear built fast` },
+        {
+          property: "og:description",
+          content: seoDesc,
+        },
+      ],
+      links: [{ rel: "preload", as: "image", href: heroImg, fetchPriority: "high" } as never],
+    };
+  },
   component: Home,
 });
 
