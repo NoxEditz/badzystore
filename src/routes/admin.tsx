@@ -1766,13 +1766,34 @@ function SettingsTab({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingSettings(true);
+    
+    console.log("━━━ ADMIN SETTINGS SAVE DEBUG ━━━");
+    console.log("1. Settings being sent:", {
+      featuredEnabled: settings.featuredEnabled,
+      trendingEnabled: settings.trendingEnabled,
+      totalFields: Object.keys(settings).length,
+    });
+    
     try {
       const res = await saveSettings({ data: { settings } });
+      
+      console.log("2. Response from server:", {
+        featuredEnabled: res.settings.featuredEnabled,
+        trendingEnabled: res.settings.trendingEnabled,
+        totalFieldsReturned: Object.keys(res.settings).length,
+      });
+      
       updateStoreSettings(res.settings);
       window.dispatchEvent(new CustomEvent("badzy:store-settings-updated", { detail: res.settings }));
-      toast.success("Settings saved to Supabase!");
+      
+      console.log("3. Settings saved successfully!");
+      toast.success(`Settings saved! featuredEnabled=${res.settings.featuredEnabled}, trendingEnabled=${res.settings.trendingEnabled}`);
     } catch (error) {
-      console.error("Failed to save store settings", error);
+      console.error("❌ Failed to save store settings", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       const message = error instanceof Error ? error.message : "Please try again.";
       toast.error(`Failed to save settings: ${message}`);
     } finally {

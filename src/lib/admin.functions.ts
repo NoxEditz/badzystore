@@ -282,16 +282,34 @@ export const saveAdminStoreSettings = createServerFn({ method: "POST" })
     const { requireAdmin } = await import("./admin.server");
     await requireAdmin();
 
+    console.log("━━━ SERVER-SIDE SAVE DEBUG ━━━");
+    console.log("1. Received settings:", {
+      featuredEnabled: data.settings.featuredEnabled,
+      trendingEnabled: data.settings.trendingEnabled,
+      totalFieldsReceived: Object.keys(data.settings).length,
+    });
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const normalized = normalizeSettings(data.settings);
+    
+    console.log("2. After normalization:", {
+      featuredEnabled: normalized.featuredEnabled,
+      trendingEnabled: normalized.trendingEnabled,
+      totalFieldsNormalized: Object.keys(normalized).length,
+    });
+
     const { error } = await supabaseAdmin.from("settings").upsert({
       key: "store_settings",
       value: normalized,
       updated_at: new Date().toISOString(),
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Supabase upsert error:", error);
+      throw error;
+    }
 
+    console.log("3. ✅ Saved to Supabase successfully!");
     return { ok: true as const, settings: normalized };
   });
 
