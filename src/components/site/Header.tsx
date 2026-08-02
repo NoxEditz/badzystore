@@ -2,12 +2,13 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Search, Menu, Globe, Moon, Sun, X } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Logo } from "./Logo";
-import { CATEGORIES } from "@/data/products";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { CartDrawer } from "./CartDrawer";
 import { useLang } from "@/store/lang";
 import { useTheme } from "@/store/theme";
 import { DICTIONARY } from "@/lib/i18n";
+import { mergeCategories, type CatalogCategory } from "@/services/catalogService";
+import { fetchStoreSettings, subscribeToStoreSettings } from "@/services/settingsService";
 
 export function Header() {
   const { lang, toggleLang } = useLang();
@@ -21,9 +22,31 @@ export function Header() {
   const [langAnimating, setLangAnimating] = useState(false);
   const [themeAnimating, setThemeAnimating] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [categories, setCategories] = useState<CatalogCategory[]>(() => mergeCategories());
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  // Load categories from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    fetchStoreSettings()
+      .then((settings) => {
+        if (!cancelled) setCategories(mergeCategories(settings));
+      })
+      .catch((error) => console.error("Failed to load categories", error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Subscribe to category changes
+  useEffect(() => {
+    return subscribeToStoreSettings((settings) => {
+      setCategories(mergeCategories(settings));
+    });
+  }, []);
 
   // Scroll shadow with throttle
   useEffect(() => {
@@ -95,7 +118,7 @@ export function Header() {
             >
               {t.nav.shopAll}
             </Link>
-            {CATEGORIES.slice(0, 4).map((c) => (
+            {categories.slice(0, 4).map((c) => (
               <Link
                 key={c.id}
                 to="/shop"
@@ -214,7 +237,7 @@ export function Header() {
                 <Link to="/shop" className="rounded-lg px-3 py-2.5 font-bold hover:bg-secondary">
                   {t.nav.shopAll}
                 </Link>
-                {CATEGORIES.map((c) => (
+                {categories.map((c) => (
                   <Link
                     key={c.id}
                     to="/shop"

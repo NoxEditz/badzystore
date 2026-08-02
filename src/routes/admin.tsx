@@ -1302,58 +1302,104 @@ function CategoriesTab({
     await persistCategories(updated);
   };
 
+  const editCustom = (category: StoreSettings["customCategories"][number]) => {
+    editCategory(category);
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h3 className="font-display text-lg font-bold mb-4">{isAr ? "الأقسام الأساسية" : "Built-in Categories"}</h3>
         <div className="grid gap-2 sm:grid-cols-2">
-          {builtIn.map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">{c.label}</p>
-                <p className="text-xs text-muted-foreground">{c.labelAr}</p>
-                {c.emoji && <p className="text-xs">{c.emoji}</p>}
-              </div>
-              <button
-                type="button"
-                onClick={() => editBuiltIn(c)}
-                className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase text-primary transition hover:bg-primary/20"
+          {builtIn.map((c) => {
+            const override = settings.customCategories.find((custom) => custom.id === c.id);
+            const displayLabel = override?.label || c.label;
+            const displayLabelAr = override?.labelAr || c.labelAr;
+            const displayEmoji = override?.emoji || c.emoji;
+            const isHidden = override ? override.visible === false : c.visible === false;
+            
+            return (
+              <div
+                key={c.id}
+                className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
+                  isHidden ? "border-border/40 bg-card/50 opacity-60" : "border-border/60 bg-card"
+                }`}
               >
-                {isAr ? "تعديل" : "Edit"}
-              </button>
-            </div>
-          ))}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold flex items-center gap-2">
+                    {displayLabel}
+                    {isHidden && (
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                        {isAr ? "مخفي" : "Hidden"}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{displayLabelAr}</p>
+                  {displayEmoji && <p className="text-xs">{displayEmoji}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => editBuiltIn(override || c)}
+                  className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase text-primary transition hover:bg-primary/20"
+                >
+                  {isAr ? "تعديل" : "Edit"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       <div>
         <h3 className="font-display text-lg font-bold mb-4">{isAr ? "الأقسام المخصصة" : "Custom Categories"}</h3>
-        {settings.customCategories.length === 0 ? (
+        {settings.customCategories.filter((c) => !builtIn.some((b) => b.id === c.id)).length === 0 ? (
           <p className="text-sm text-muted-foreground">{isAr ? "لا توجد أقسام مخصصة بعد. أضف واحداً بالأسفل." : "No custom categories yet. Add one below."}</p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 mb-4">
-            {settings.customCategories.map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center justify-between rounded-xl border border-primary/30 bg-card px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold">{c.label}</p>
-                  <p className="text-xs text-muted-foreground">{c.labelAr}</p>
-            {c.emoji && <p className="text-xs">{c.emoji}</p>}
-                </div>
-                <button
-                  disabled={saving}
-                  onClick={() => deleteCustom(c.id)}
-                  className="text-muted-foreground hover:text-destructive transition disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+            {settings.customCategories
+              .filter((c) => !builtIn.some((b) => b.id === c.id))
+              .map((c) => {
+                const isHidden = c.visible === false;
+                return (
+                  <div
+                    key={c.id}
+                    className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
+                      isHidden ? "border-primary/20 bg-card/50 opacity-60" : "border-primary/30 bg-card"
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold flex items-center gap-2">
+                        {c.label}
+                        {isHidden && (
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                            {isAr ? "مخفي" : "Hidden"}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{c.labelAr}</p>
+                      {c.emoji && <p className="text-xs">{c.emoji}</p>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => editCustom(c)}
+                        className="text-muted-foreground hover:text-primary transition disabled:opacity-50"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => deleteCustom(c.id)}
+                        className="text-muted-foreground hover:text-destructive transition disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         )}
 
@@ -1361,7 +1407,18 @@ function CategoriesTab({
           onSubmit={addCategory}
           className="rounded-xl border border-border/60 bg-card p-5 space-y-3"
         >
-          <h4 className="text-sm font-bold">{isAr ? "إضافة/تعديل قسم" : "Add/Edit Category"}</h4>
+          <h4 className="text-sm font-bold">
+            {editingId 
+              ? (isAr ? "تعديل القسم" : "Edit Category") 
+              : (isAr ? "إضافة قسم جديد" : "Add New Category")}
+          </h4>
+          {editingId && builtIn.some((b) => b.id === editingId) && (
+            <p className="text-xs text-muted-foreground -mt-1">
+              {isAr 
+                ? "تعديل قسم أساسي - سيتم تخصيص الإعدادات وحفظها في قاعدة البيانات" 
+                : "Editing built-in category - customizations will be saved to database"}
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={isAr ? "الاسم (بالانجليزية)" : "Label (EN)"} required>
               <input
@@ -1400,7 +1457,8 @@ function CategoriesTab({
               disabled={saving}
               className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
             >
-              <Plus className="h-3.5 w-3.5" /> {saving ? "Saving…" : editingId ? "Update Category" : "Add Category"}
+              {editingId ? <Save className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+              {saving ? (isAr ? "جاري الحفظ..." : "Saving…") : editingId ? (isAr ? "تحديث" : "Update") : (isAr ? "إضافة" : "Add")}
             </button>
             {editingId && (
               <button
@@ -1416,7 +1474,7 @@ function CategoriesTab({
                 }}
                 className="h-9 rounded-lg border border-border px-4 text-xs font-semibold transition hover:bg-secondary"
               >
-                Cancel Edit
+                {isAr ? "إلغاء" : "Cancel"}
               </button>
             )}
           </div>
